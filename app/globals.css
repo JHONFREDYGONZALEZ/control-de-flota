@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+.font-display {
+  font-family: 'Oswald', sans-serif;
+}
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.btn {
+  @apply border border-border bg-panel text-text px-4 py-2.5 rounded-lg text-sm font-medium transition-colors min-h-[40px];
+}
+.btn:hover {
+  @apply bg-panelHover;
+}
+.btn-primary {
+  @apply bg-amber border-amber text-[#1A130A] font-semibold;
+}
+.btn-danger {
+  @apply border-red text-red;
+}
+.btn-ghost {
+  @apply border-transparent bg-transparent text-dim;
+}
+.card {
+  @apply bg-panel border border-border rounded-xl2 p-4;
+}
+.field label {
+  @apply block text-xs text-dim mb-1.5;
+}
+.field input,
+.field select,
+.field textarea {
+  @apply w-full bg-panelAlt border border-border text-text px-3 py-2.5 rounded-lg text-base;
+}
+.status-tag {
+  @apply text-xs px-2.5 py-1 rounded-full font-semibold inline-block;
+}
+.status-expired { @apply bg-red/15 text-red; }
+.status-warning { @apply bg-amber/15 text-amber; }
+.status-ok { @apply bg-teal/15 text-teal; }
+.status-pending { @apply bg-dim/15 text-dim; }
