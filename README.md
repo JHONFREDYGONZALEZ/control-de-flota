@@ -60,32 +60,56 @@ git push -u origin main
    `control-de-flota.vercel.app`) que puedes abrir desde el celular de cada
    persona del equipo.
 
-## Qué quedó cubierto en esta primera versión
+## Novedades: invitar usuarios desde la app
+
+Ya no hace falta crear usuarios manualmente en Supabase. Un administrador
+puede ir a **"Usuarios"** dentro de la app y usar **"+ Invitar usuario"** para
+crear personas con su rol (administrador, gerencia u operador), cambiarles el
+rol después, o quitarles el acceso.
+
+Para que esto funcione necesitas una clave adicional, la **service role
+key** (tiene permisos de administrador sobre tu base de datos — nunca se
+expone al navegador, solo se usa en el servidor):
+
+1. En Supabase, ve a **Project Settings → API**.
+2. Copia la clave que dice **"service_role"** (distinta de la "anon public").
+3. Agrégala como variable de entorno:
+   - En tu `.env.local` (para desarrollo local): `SUPABASE_SERVICE_ROLE_KEY=...`
+   - En Vercel: **Settings → Environment Variables** → agrega
+     `SUPABASE_SERVICE_ROLE_KEY` con ese valor (Production and Preview).
+   - Después de agregarla en Vercel, haz un **Redeploy** para que tome efecto.
+
+Si tu base de datos ya la creaste antes de esta actualización, ejecuta una
+sola vez en el SQL Editor el archivo `supabase/migration_add_email.sql`
+(agrega la columna de correo que faltaba).
+
+## Qué quedó cubierto en esta versión
 
 - Autenticación real por correo/contraseña (Supabase Auth), con roles
   **administrador**, **gerencia** y **operador**.
+- Invitar usuarios, cambiar su rol y quitarles el acceso, todo desde la app.
 - Vehículos, documentos (con alerta si falta archivo en los que no vencen),
   mantenimientos por kilometraje (incluye lavados), kilometraje con la regla
   del viernes y observaciones automáticas.
 - Entrega de vehículo con las 9 fotos, desde la pantalla principal o desde
   cada vehículo.
 - Proveedores (crear, editar, eliminar).
-- Órdenes de trabajo: generación, aprobación (gerencia o administrador) y
-  facturación con número + valor.
+- Órdenes de trabajo: generación (en pantalla propia, igual que entrega),
+  aprobación (gerencia o administrador) y facturación con número + valor.
 - Archivos guardados en Supabase Storage (bucket `fleet-files`).
 - Todo protegido por RLS: cada empresa solo ve sus propios datos.
 
 ## Lo que quedó simplificado (para una siguiente vuelta)
 
-- Invitar usuarios desde la interfaz (hoy se crea por `signup` + se asigna el
-  rol manualmente en la tabla `profiles`).
 - Histórico completo visible en pantalla para documentos/mantenimientos (las
   tablas `document_history` y `maintenance_history` ya guardan todo; falta la
   vista para desplegarlo igual que en el prototipo).
 - Borrado total/parcial de histórico restringido a administrador (la lógica
   de roles ya existe para aprobar/facturar/borrar observaciones; falta
   replicarla en estas dos tablas de histórico).
-- Botón de compartir por WhatsApp en la orden de trabajo.
+- Algunas acciones rápidas (editar proveedor, actualizar documento/
+  mantenimiento) siguen usando un desplegable simple en vez de una ventana
+  con botón "✕" — funcionan igual, solo que sin ese detalle visual.
 
 Dímelo cuando quieras que sigamos con cualquiera de estos puntos — la base
 (esquema, autenticación, roles, alertas) ya está lista para construir encima.

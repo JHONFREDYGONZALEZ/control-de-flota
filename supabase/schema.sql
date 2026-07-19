@@ -17,6 +17,7 @@ create table if not exists profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   company_id uuid not null references companies(id) on delete cascade,
   full_name text not null,
+  email text,
   role text not null default 'operador' check (role in ('admin','gerencia','operador')),
   created_at timestamptz not null default now()
 );
@@ -259,9 +260,11 @@ security definer
 as $$
 declare
   new_company_id uuid;
+  user_email text;
 begin
+  select email into user_email from auth.users where id = auth.uid();
   insert into companies(name) values (coalesce(nullif(p_company_name,''), 'PNR SAS')) returning id into new_company_id;
-  insert into profiles(id, company_id, full_name, role) values (auth.uid(), new_company_id, p_full_name, 'admin');
+  insert into profiles(id, company_id, full_name, email, role) values (auth.uid(), new_company_id, p_full_name, user_email, 'admin');
   return new_company_id;
 end;
 $$;

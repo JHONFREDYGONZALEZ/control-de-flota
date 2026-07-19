@@ -30,6 +30,11 @@ export default async function DashboardPage() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {isAdmin && (
+            <Link href="/users" className="btn btn-sm">
+              Usuarios
+            </Link>
+          )}
+          {isAdmin && (
             <Link href="/providers" className="btn btn-sm">
               Proveedores
             </Link>
