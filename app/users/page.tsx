@@ -47,11 +47,14 @@ export default async function UsersPage() {
           <div className="flex items-center gap-2">
             <form action={changeUserRole} className="flex items-center gap-2">
               <input type="hidden" name="userId" value={u.id} />
-              <select name="role" defaultValue={u.role} onChange={(e) => e.currentTarget.form?.requestSubmit()}>
+              <select name="role" defaultValue={u.role}>
                 <option value="operador">Operador</option>
                 <option value="gerencia">Gerencia</option>
                 <option value="admin">Administrador</option>
               </select>
+              <button type="submit" className="btn btn-sm">
+                Guardar
+              </button>
             </form>
             {u.id !== profile!.id && (
               <form action={removeUserAccess}>
