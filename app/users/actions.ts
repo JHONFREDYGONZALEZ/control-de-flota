@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 
 async function currentAdminProfile() {
   const supabase = createClient();
@@ -21,7 +22,11 @@ export async function inviteUser(formData: FormData) {
   const password = String(formData.get('password') || '');
   const role = String(formData.get('role') || 'operador');
 
-  if (!email || !fullName || !password) throw new Error('Completa todos los campos');
+  if (!email || !fullName || !password) {
+    redirect(
+      `/users?error=${encodeURIComponent('Completa todos los campos')}&fullName=${encodeURIComponent(fullName)}&role=${encodeURIComponent(role)}`
+    );
+  }
 
   const admin = createAdminClient();
   const { data: created, error } = await admin.auth.admin.createUser({
@@ -29,18 +34,32 @@ export async function inviteUser(formData: FormData) {
     password,
     email_confirm: true,
   });
-  if (error || !created.user) throw new Error(error?.message || 'No se pudo crear el usuario');
+  if (error || !created.user) {
+    let message = error?.message || 'No se pudo crear el usuario';
+    if (message.toLowerCase().includes('already been registered') || message.toLowerCase().includes('already registered')) {
+      message = 'Ese correo ya está registrado. Usa otro correo, o revisa si esa persona ya tiene acceso en la lista de abajo.';
+    }
+    redirect(
+      `/users?error=${encodeURIComponent(message)}&fullName=${encodeURIComponent(fullName)}&role=${encodeURIComponent(role)}`
+    );
+  }
 
-  const { error: profileError } = await supabase.from('profiles').insert({
+  const { error: profileError } = await admin.from('profiles').insert({
     id: created.user.id,
     company_id: profile.company_id,
     full_name: fullName,
     email,
     role,
   });
-  if (profileError) throw new Error(profileError.message);
+  if (profileError) {
+    await admin.auth.admin.deleteUser(created.user.id);
+    redirect(
+      `/users?error=${encodeURIComponent(profileError.message)}&fullName=${encodeURIComponent(fullName)}&role=${encodeURIComponent(role)}`
+    );
+  }
 
   revalidatePath('/users');
+  redirect('/users');
 }
 
 export async function removeUserAccess(formData: FormData) {
