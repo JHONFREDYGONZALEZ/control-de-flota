@@ -3,14 +3,11 @@ import { getDashboardData } from '@/lib/getDashboardData';
 import { fmtKm, fmtDateTime } from '@/lib/fleet';
 import { signOut } from '../login/actions';
 import {
-  addVehicle,
   registerKm,
   deleteObservation,
-  generateWorkOrder,
   approveWorkOrder,
   invoiceWorkOrder,
 } from '../actions';
-import { MAINT_TEMPLATES } from '@/lib/fleet';
 
 export const dynamic = 'force-dynamic';
 
@@ -115,57 +112,9 @@ export default async function DashboardPage() {
         <div className="flex items-center gap-2 px-4 py-3.5 border-b border-border">
           <span className="w-2.5 h-2.5 rounded-full bg-teal shadow-[0_0_8px_theme(colors.teal)]" />
           <h3 className="text-sm font-display flex-1">Órdenes de trabajo</h3>
-          <details className="relative">
-            <summary className="btn btn-sm btn-primary cursor-pointer list-none">+ Generar orden</summary>
-            <div className="absolute right-0 mt-2 w-80 card z-10 shadow-xl">
-              <form action={generateWorkOrder} className="space-y-3 text-left">
-                <div className="field">
-                  <label>Vehículo</label>
-                  <select name="vehicleId" required>
-                    <option value="">Selecciona…</option>
-                    {vehicles.map((v) => (
-                      <option key={v.id} value={v.id}>
-                        {v.placa} — {v.marca} {v.modelo}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="field">
-                  <label>Tipo de mantenimiento</label>
-                  <select name="maintenanceName">
-                    {MAINT_TEMPLATES.map((t) => (
-                      <option key={t.name} value={t.name}>
-                        {t.name}
-                      </option>
-                    ))}
-                    <option value="__otro__">Otro (especificar)</option>
-                  </select>
-                </div>
-                <div className="field">
-                  <label>Otro (si aplica)</label>
-                  <input name="maintenanceOther" placeholder="Ej. cambio de batería" />
-                </div>
-                <div className="field">
-                  <label>Proveedor</label>
-                  <select name="providerId" required>
-                    <option value="">Selecciona…</option>
-                    {providers.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="field">
-                  <label>Notas</label>
-                  <textarea name="notes" rows={2} />
-                </div>
-                <button type="submit" className="btn btn-primary w-full">
-                  Generar
-                </button>
-              </form>
-            </div>
-          </details>
+          <Link href="/work-orders/new" className="btn btn-sm btn-primary">
+            + Generar orden
+          </Link>
         </div>
         {allWorkOrders.length === 0 ? (
           <div className="p-5 text-center text-dim text-sm">Aún no se han generado órdenes de trabajo.</div>
@@ -233,36 +182,9 @@ export default async function DashboardPage() {
       <div className="flex justify-between items-center gap-2 mb-4 flex-wrap">
         <h2 className="font-display text-sm text-dim uppercase">Vehículos</h2>
         {isAdmin && (
-          <details className="relative">
-            <summary className="btn btn-primary btn-sm cursor-pointer list-none">+ Agregar vehículo</summary>
-            <div className="absolute right-0 mt-2 w-72 card z-10 shadow-xl">
-              <form action={addVehicle} className="space-y-3 text-left">
-                <div className="field">
-                  <label>Placa</label>
-                  <input name="placa" required style={{ textTransform: 'uppercase' }} />
-                </div>
-                <div className="field">
-                  <label>Marca</label>
-                  <input name="marca" required />
-                </div>
-                <div className="field">
-                  <label>Modelo</label>
-                  <input name="modelo" required />
-                </div>
-                <div className="field">
-                  <label>Año</label>
-                  <input name="anio" type="number" />
-                </div>
-                <div className="field">
-                  <label>Km inicial</label>
-                  <input name="kmInicial" type="number" min="0" />
-                </div>
-                <button type="submit" className="btn btn-primary w-full">
-                  Guardar
-                </button>
-              </form>
-            </div>
-          </details>
+          <Link href="/vehicles/new" className="btn btn-primary btn-sm">
+            + Agregar vehículo
+          </Link>
         )}
       </div>
 

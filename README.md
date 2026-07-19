@@ -5,7 +5,7 @@ construida a partir del prototipo. Cubre: vehículos, documentos, mantenimientos
 por kilometraje (incluye lavados), kilometraje semanal con observaciones,
 entrega de vehículo con fotos, proveedores, y órdenes de trabajo con
 aprobación de gerencia y facturación.
-ok
+
 ## 1. Crear el proyecto en Supabase
 
 1. Entra a https://supabase.com → **New project**.

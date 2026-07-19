@@ -1,4 +1,5 @@
 import { signUpFirstAdmin } from '../login/actions';
+import PasswordField from '@/components/PasswordField';
 
 export default function SignupPage({ searchParams }: { searchParams: { error?: string } }) {
   return (
@@ -28,10 +29,7 @@ export default function SignupPage({ searchParams }: { searchParams: { error?: s
           <label>Correo</label>
           <input type="email" name="email" required />
         </div>
-        <div className="field">
-          <label>Contraseña</label>
-          <input type="password" name="password" required minLength={6} />
-        </div>
+        <PasswordField name="password" label="Contraseña" minLength={6} />
         <button type="submit" className="btn btn-primary w-full">
           Crear cuenta
         </button>

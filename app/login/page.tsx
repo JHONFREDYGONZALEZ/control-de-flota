@@ -1,5 +1,6 @@
 import { signIn } from './actions';
 import Link from 'next/link';
+import PasswordField from '@/components/PasswordField';
 
 export default function LoginPage({ searchParams }: { searchParams: { error?: string } }) {
   return (
@@ -21,10 +22,7 @@ export default function LoginPage({ searchParams }: { searchParams: { error?: st
           <label>Correo</label>
           <input type="email" name="email" required autoFocus />
         </div>
-        <div className="field">
-          <label>Contraseña</label>
-          <input type="password" name="password" required />
-        </div>
+        <PasswordField name="password" label="Contraseña" />
         <button type="submit" className="btn btn-primary w-full">
           Entrar
         </button>
