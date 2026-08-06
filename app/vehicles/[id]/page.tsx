@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { docStatus, maintStatus, statusLabel, fmtDate, fmtKm, fmtDateTime, kmFridayNeedsAlert, DELIVERY_PHOTO_SLOTS, MAINT_TEMPLATES } from '@/lib/fleet';
-import { registerKm, generateWorkOrder } from '@/app/actions';
+import { docStatus, maintStatus, statusLabel, fmtDate, fmtKm, fmtDateTime, kmFridayNeedsAlert, DELIVERY_PHOTO_SLOTS } from '@/lib/fleet';
+import { registerKm, generateWorkOrder, updateWorkOrder } from '@/app/actions';
 import PhotoField from '@/components/PhotoField';
+import MaintenanceTypeField from '@/components/MaintenanceTypeField';
 import { updateDocument, addCustomDocument, updateMaintenanceItem, addCustomMaintenanceItem, addDelivery, updateDeliveryPhotos, deleteVehicle } from './actions';
 
 export const dynamic = 'force-dynamic';
@@ -13,12 +14,13 @@ export default async function VehiclePage({ params }: { params: { id: string } }
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user!.id).single();
   const isAdmin = profile!.role === 'admin';
+  const canEditApproved = profile!.role === 'admin' || profile!.role === 'gerencia';
 
   const { data: vehicle } = await supabase.from('vehicles').select('*').eq('id', params.id).single();
   if (!vehicle) notFound();
 
   const [{ data: documents }, { data: items }, { data: deliveries }, { data: workOrders }, { data: kmLogs }, { data: providers }] = await Promise.all([
-    supabase.from('documents').select('*').eq('vehicle_id', params.id).order('created_at'),
+    supabase.from('documents').select('*, document_history(*)').eq('vehicle_id', params.id).order('created_at'),
     supabase.from('maintenance_items').select('*').eq('vehicle_id', params.id).order('created_at'),
     supabase.from('deliveries').select('*, delivery_photos(*)').eq('vehicle_id', params.id).order('created_at', { ascending: false }),
     supabase.from('work_orders').select('*, providers(name, phone)').eq('vehicle_id', params.id).order('created_at', { ascending: false }),
@@ -103,6 +105,31 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                   )}
                   {doc.owner ? ` · Propietario: ${doc.owner}` : ''}
                 </div>
+                {doc.document_history && doc.document_history.length > 0 && (
+                  <details className="mt-1.5">
+                    <summary className="text-dim text-xs cursor-pointer">
+                      Ver histórico de archivos cargados ({doc.document_history.length})
+                    </summary>
+                    <div className="mt-1.5 space-y-1">
+                      {[...doc.document_history]
+                        .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                        .map((h: any) => (
+                          <div key={h.id} className="text-xs text-dim">
+                            {fmtDateTime(h.created_at)}
+                            {h.file_url && (
+                              <>
+                                {' · '}
+                                <a href={h.file_url} target="_blank" className="text-teal">
+                                  ver archivo
+                                </a>
+                              </>
+                            )}
+                            {h.owner ? ` · propietario: ${h.owner}` : ''}
+                          </div>
+                        ))}
+                    </div>
+                  </details>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <span className={`status-tag status-${status}`}>{label}</span>
@@ -318,23 +345,55 @@ export default async function VehiclePage({ params }: { params: { id: string } }
       <div className="mt-6">
         <h3 className="text-xs uppercase text-dim tracking-wide mb-3">4 · Órdenes de trabajo</h3>
         {(workOrders || []).length === 0 && <div className="card text-center text-dim text-sm">Aún no se han generado órdenes.</div>}
-        {(workOrders || []).map((o: any) => (
-          <div key={o.id} className="card mb-2.5">
-            <div className="font-semibold text-sm">{o.maintenance_name}</div>
-            <div className="text-dim text-xs mt-1">
-              Proveedor: {o.providers?.name} {o.providers?.phone ? `· ${o.providers.phone}` : ''} · {fmtDateTime(o.created_at)}
+        {(workOrders || []).map((o: any) => {
+          const canEdit = !o.approved || canEditApproved;
+          return (
+            <div key={o.id} className="card mb-2.5">
+              <div className="font-semibold text-sm">{o.maintenance_name}</div>
+              <div className="text-dim text-xs mt-1">
+                Proveedor: {o.providers?.name} {o.providers?.phone ? `· ${o.providers.phone}` : ''} · {fmtDateTime(o.created_at)}
+              </div>
+              {o.notes && <div className="text-dim text-xs mt-1">{o.notes}</div>}
+              {o.value != null && <div className="text-dim text-xs mt-1">Valor: ${Number(o.value).toLocaleString('es-CO')}</div>}
+              <div className="flex gap-1.5 mt-2 items-center flex-wrap">
+                <span className={`status-tag ${o.approved ? 'status-ok' : 'status-warning'}`}>
+                  {o.approved ? 'Aprobada por gerencia' : 'Pendiente aprobación'}
+                </span>
+                <span className={`status-tag ${o.invoiced ? 'status-ok' : 'status-pending'}`}>
+                  {o.invoiced ? `Facturada #${o.invoice_number}` : 'Sin facturar'}
+                </span>
+                {canEdit && (providers || []).length > 0 && (
+                  <details>
+                    <summary className="btn btn-sm cursor-pointer list-none">Editar orden</summary>
+                    <form action={updateWorkOrder} className="mt-2 space-y-2 w-72">
+                      <input type="hidden" name="orderId" value={o.id} />
+                      <input type="hidden" name="vehicleId" value={vehicle.id} />
+                      <MaintenanceTypeField defaultValue={o.maintenance_name} />
+                      <div className="field">
+                        <label>Proveedor</label>
+                        <select name="providerId" defaultValue={o.provider_id} required>
+                          {providers!.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                              {p.specialty ? ` — ${p.specialty}` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="field">
+                        <label>Instrucciones / notas</label>
+                        <textarea name="notes" rows={3} defaultValue={o.notes || ''} />
+                      </div>
+                      <button type="submit" className="btn btn-primary btn-sm w-full">
+                        Guardar cambios
+                      </button>
+                    </form>
+                  </details>
+                )}
+              </div>
             </div>
-            {o.value != null && <div className="text-dim text-xs mt-1">Valor: ${Number(o.value).toLocaleString('es-CO')}</div>}
-            <div className="flex gap-1.5 mt-2">
-              <span className={`status-tag ${o.approved ? 'status-ok' : 'status-warning'}`}>
-                {o.approved ? 'Aprobada por gerencia' : 'Pendiente aprobación'}
-              </span>
-              <span className={`status-tag ${o.invoiced ? 'status-ok' : 'status-pending'}`}>
-                {o.invoiced ? `Facturada #${o.invoice_number}` : 'Sin facturar'}
-              </span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
         {(providers || []).length === 0 ? (
           <p className="text-dim text-xs">
             Aún no tienes proveedores registrados.{' '}
@@ -348,21 +407,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
             <summary className="btn btn-primary cursor-pointer list-none">+ Generar orden de trabajo</summary>
             <form action={generateWorkOrder} className="card mt-2 space-y-3">
               <input type="hidden" name="vehicleId" value={vehicle.id} />
-              <div className="field">
-                <label>Tipo de mantenimiento</label>
-                <select name="maintenanceName">
-                  {MAINT_TEMPLATES.map((t) => (
-                    <option key={t.name} value={t.name}>
-                      {t.name}
-                    </option>
-                  ))}
-                  <option value="__otro__">Otro (especificar)</option>
-                </select>
-              </div>
-              <div className="field">
-                <label>Otro (si aplica)</label>
-                <input name="maintenanceOther" placeholder="Ej. cambio de batería" />
-              </div>
+              <MaintenanceTypeField />
               <div className="field">
                 <label>Proveedor</label>
                 <select name="providerId" required>

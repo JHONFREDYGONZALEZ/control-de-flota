@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* le dice al navegador que sus propios controles (menús desplegables,
+     selector de fecha, autocompletado) deben usar colores oscuros,
+     para que no aparezcan con fondo blanco y letra blanca */
+  color-scheme: dark;
+}
+
 body {
   font-family: 'Inter', sans-serif;
 }
@@ -37,6 +44,12 @@ body {
 .field select,
 .field textarea {
   @apply w-full bg-panelAlt border border-border text-text px-3 py-2.5 rounded-lg text-base;
+}
+/* refuerzo por si algún navegador ignora color-scheme en el menú desplegable */
+select,
+option {
+  background-color: #212B37;
+  color: #E8EAED;
 }
 .status-tag {
   @apply text-xs px-2.5 py-1 rounded-full font-semibold inline-block;

@@ -117,6 +117,34 @@ export async function generateWorkOrder(formData: FormData) {
   revalidatePath(`/vehicles/${vehicleId}`);
 }
 
+export async function updateWorkOrder(formData: FormData) {
+  const { supabase, profile } = await currentProfile();
+  const orderId = String(formData.get('orderId'));
+  const vehicleId = String(formData.get('vehicleId'));
+
+  const { data: order } = await supabase.from('work_orders').select('approved').eq('id', orderId).single();
+  if (order?.approved && profile.role !== 'admin' && profile.role !== 'gerencia') {
+    throw new Error('Esta orden ya fue aprobada; solo gerencia o un administrador pueden modificarla');
+  }
+
+  const providerId = String(formData.get('providerId'));
+  const rawName = String(formData.get('maintenanceName'));
+  const maintenanceName = rawName === '__otro__' ? String(formData.get('maintenanceOther') || '').trim() : rawName;
+  if (!maintenanceName) throw new Error('Especifica el tipo de mantenimiento');
+
+  await supabase
+    .from('work_orders')
+    .update({
+      provider_id: providerId,
+      maintenance_name: maintenanceName,
+      notes: String(formData.get('notes') || '') || null,
+    })
+    .eq('id', orderId);
+
+  revalidatePath('/dashboard');
+  revalidatePath(`/vehicles/${vehicleId}`);
+}
+
 export async function approveWorkOrder(formData: FormData) {
   const { supabase, profile } = await currentProfile();
   if (profile.role !== 'admin' && profile.role !== 'gerencia') {
