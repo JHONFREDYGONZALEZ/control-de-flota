@@ -117,12 +117,11 @@ export default async function DashboardPage() {
         <div className="flex items-center gap-2 px-4 py-3.5 border-b border-border">
           <span className="w-2.5 h-2.5 rounded-full bg-teal shadow-[0_0_8px_theme(colors.teal)]" />
           <h3 className="text-sm font-display flex-1">Órdenes de trabajo</h3>
-          <Link href="/work-orders/new" className="btn btn-sm btn-primary">
-            + Generar orden
-          </Link>
         </div>
         {allWorkOrders.length === 0 ? (
-          <div className="p-5 text-center text-dim text-sm">Aún no se han generado órdenes de trabajo.</div>
+          <div className="p-5 text-center text-dim text-sm">
+            Aún no se han generado órdenes de trabajo. Para generar una, entra al vehículo correspondiente.
+          </div>
         ) : (
           allWorkOrders.slice(0, 10).map((o: any) => (
             <div key={o.id} className="px-4 py-3 border-b border-border last:border-0">
@@ -170,17 +169,6 @@ export default async function DashboardPage() {
             </div>
           ))
         )}
-      </div>
-
-      {/* entrega de vehículo */}
-      <div className="card mb-4 !p-0 overflow-hidden">
-        <div className="flex items-center gap-2 px-4 py-3.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-blue shadow-[0_0_8px_theme(colors.blue)]" />
-          <h3 className="text-sm font-display flex-1">Entrega de vehículo</h3>
-          <Link href="/deliveries/new" className="btn btn-sm btn-primary">
-            + Registrar entrega
-          </Link>
-        </div>
       </div>
 
       {/* toolbar + agregar vehículo */}

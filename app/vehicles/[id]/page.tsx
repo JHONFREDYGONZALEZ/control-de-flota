@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { docStatus, maintStatus, statusLabel, fmtDate, fmtKm, fmtDateTime, kmFridayNeedsAlert, DELIVERY_PHOTO_SLOTS } from '@/lib/fleet';
-import { registerKm } from '@/app/actions';
-import { updateDocument, addCustomDocument, updateMaintenanceItem, addCustomMaintenanceItem, addDelivery, deleteVehicle } from './actions';
+import { docStatus, maintStatus, statusLabel, fmtDate, fmtKm, fmtDateTime, kmFridayNeedsAlert, DELIVERY_PHOTO_SLOTS, MAINT_TEMPLATES } from '@/lib/fleet';
+import { registerKm, generateWorkOrder } from '@/app/actions';
+import PhotoField from '@/components/PhotoField';
+import { updateDocument, addCustomDocument, updateMaintenanceItem, addCustomMaintenanceItem, addDelivery, updateDeliveryPhotos, deleteVehicle } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,12 +17,13 @@ export default async function VehiclePage({ params }: { params: { id: string } }
   const { data: vehicle } = await supabase.from('vehicles').select('*').eq('id', params.id).single();
   if (!vehicle) notFound();
 
-  const [{ data: documents }, { data: items }, { data: deliveries }, { data: workOrders }, { data: kmLogs }] = await Promise.all([
+  const [{ data: documents }, { data: items }, { data: deliveries }, { data: workOrders }, { data: kmLogs }, { data: providers }] = await Promise.all([
     supabase.from('documents').select('*').eq('vehicle_id', params.id).order('created_at'),
     supabase.from('maintenance_items').select('*').eq('vehicle_id', params.id).order('created_at'),
     supabase.from('deliveries').select('*, delivery_photos(*)').eq('vehicle_id', params.id).order('created_at', { ascending: false }),
     supabase.from('work_orders').select('*, providers(name, phone)').eq('vehicle_id', params.id).order('created_at', { ascending: false }),
     supabase.from('km_logs').select('*').eq('vehicle_id', params.id).order('created_at', { ascending: false }).limit(20),
+    supabase.from('providers').select('*').eq('company_id', profile!.company_id).order('name'),
   ]);
 
   const fridayAlert = kmFridayNeedsAlert(kmLogs?.[0]?.created_at || null);
@@ -126,10 +128,6 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                       <label>Archivo (imagen o pdf)</label>
                       <input type="file" name="file" accept="image/*,.pdf" />
                     </div>
-                    <div className="field">
-                      <label>Nota</label>
-                      <input name="note" defaultValue={doc.note || ''} />
-                    </div>
                     <button type="submit" className="btn btn-primary btn-sm w-full">
                       Guardar
                     </button>
@@ -226,7 +224,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
               <div className="font-semibold text-sm">Asignado a: {d.assigned_to}</div>
               <div className="text-dim text-xs mt-1">Fecha de entrega: {fmtDate(d.delivery_date)}</div>
               {d.notes && <div className="text-dim text-xs mt-1">{d.notes}</div>}
-              {d.delivery_photos?.length > 0 && (
+              {d.delivery_photos?.length > 0 ? (
                 <div className="text-dim text-xs mt-1">
                   Fotos:{' '}
                   {d.delivery_photos.map((p: any, i: number) => (
@@ -236,17 +234,53 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                     </a>
                   ))}
                 </div>
+              ) : (
+                <div className="text-dim text-xs mt-1">Sin fotos adjuntas.</div>
               )}
+              <details className="mt-2">
+                <summary className="btn btn-sm cursor-pointer list-none">Reemplazar fotos</summary>
+                <form action={updateDeliveryPhotos} className="mt-2 space-y-3" encType="multipart/form-data">
+                  <input type="hidden" name="vehicleId" value={vehicle.id} />
+                  <input type="hidden" name="deliveryId" value={d.id} />
+                  <div className="grid grid-cols-2 gap-2">
+                    {DELIVERY_PHOTO_SLOTS.map((s) => {
+                      const existing = d.delivery_photos?.find((p: any) => p.slot === s.key);
+                      return (
+                        <PhotoField
+                          key={s.key}
+                          name={`photo_${s.key}`}
+                          label={s.label}
+                          existingUrl={existing?.photo_url || null}
+                        />
+                      );
+                    })}
+                  </div>
+                  <button type="submit" className="btn btn-primary btn-sm w-full">
+                    Guardar fotos reemplazadas
+                  </button>
+                </form>
+              </details>
             </div>
           ))
         )}
         {(deliveries || []).length > 1 && (
           <details className="mb-3">
             <summary className="text-dim text-xs cursor-pointer">Ver histórico de entregas ({deliveries!.length - 1})</summary>
-            <div className="mt-2 space-y-1">
+            <div className="mt-2 space-y-2">
               {deliveries!.slice(1).map((d) => (
                 <div key={d.id} className="text-xs text-dim">
                   <strong className="font-mono">{fmtDate(d.delivery_date)}</strong> — {d.assigned_to}
+                  {d.delivery_photos?.length > 0 && (
+                    <div>
+                      Fotos:{' '}
+                      {d.delivery_photos.map((p: any, i: number) => (
+                        <a key={p.id} href={p.photo_url} target="_blank" className="text-teal">
+                          {DELIVERY_PHOTO_SLOTS.find((s) => s.key === p.slot)?.label || p.slot}
+                          {i < d.delivery_photos.length - 1 ? ', ' : ''}
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -270,10 +304,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
             </div>
             <div className="grid grid-cols-2 gap-2">
               {DELIVERY_PHOTO_SLOTS.map((s) => (
-                <div className="field" key={s.key}>
-                  <label>{s.label}</label>
-                  <input type="file" name={`photo_${s.key}`} accept="image/*" capture="environment" />
-                </div>
+                <PhotoField key={s.key} name={`photo_${s.key}`} label={s.label} />
               ))}
             </div>
             <button type="submit" className="btn btn-primary w-full">
@@ -304,7 +335,56 @@ export default async function VehiclePage({ params }: { params: { id: string } }
             </div>
           </div>
         ))}
-        <p className="text-dim text-xs">Para generar una nueva orden, hazlo desde el módulo "Órdenes de trabajo" en la pantalla principal.</p>
+        {(providers || []).length === 0 ? (
+          <p className="text-dim text-xs">
+            Aún no tienes proveedores registrados.{' '}
+            <Link href="/providers" className="text-teal">
+              Crea uno primero
+            </Link>
+            .
+          </p>
+        ) : (
+          <details>
+            <summary className="btn btn-primary cursor-pointer list-none">+ Generar orden de trabajo</summary>
+            <form action={generateWorkOrder} className="card mt-2 space-y-3">
+              <input type="hidden" name="vehicleId" value={vehicle.id} />
+              <div className="field">
+                <label>Tipo de mantenimiento</label>
+                <select name="maintenanceName">
+                  {MAINT_TEMPLATES.map((t) => (
+                    <option key={t.name} value={t.name}>
+                      {t.name}
+                    </option>
+                  ))}
+                  <option value="__otro__">Otro (especificar)</option>
+                </select>
+              </div>
+              <div className="field">
+                <label>Otro (si aplica)</label>
+                <input name="maintenanceOther" placeholder="Ej. cambio de batería" />
+              </div>
+              <div className="field">
+                <label>Proveedor</label>
+                <select name="providerId" required>
+                  <option value="">Selecciona un proveedor</option>
+                  {providers!.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                      {p.specialty ? ` — ${p.specialty}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label>Instrucciones / notas</label>
+                <textarea name="notes" rows={3} placeholder="Detalles adicionales para el proveedor" />
+              </div>
+              <button type="submit" className="btn btn-primary w-full">
+                Generar orden
+              </button>
+            </form>
+          </details>
+        )}
       </div>
     </div>
   );

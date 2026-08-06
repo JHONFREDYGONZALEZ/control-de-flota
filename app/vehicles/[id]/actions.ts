@@ -23,6 +23,16 @@ async function uploadIfPresent(supabase: any, file: FormDataEntryValue | null, f
   return data.publicUrl as string;
 }
 
+/** Borra del almacenamiento el archivo anterior cuando se reemplaza por uno nuevo */
+async function deleteOldFile(supabase: any, oldUrl: string | null) {
+  if (!oldUrl) return;
+  const marker = '/fleet-files/';
+  const idx = oldUrl.indexOf(marker);
+  if (idx === -1) return;
+  const path = oldUrl.slice(idx + marker.length);
+  await supabase.storage.from('fleet-files').remove([path]);
+}
+
 export async function updateDocument(formData: FormData) {
   const { supabase, profile } = await currentProfile();
   const documentId = String(formData.get('documentId'));
@@ -30,19 +40,22 @@ export async function updateDocument(formData: FormData) {
   const hasExpiry = formData.get('hasExpiry') === '1';
   const dueDate = hasExpiry ? String(formData.get('dueDate') || '') || null : null;
   const owner = String(formData.get('owner') || '') || null;
-  const note = String(formData.get('note') || '') || null;
   const fileUrl = await uploadIfPresent(supabase, formData.get('file'), `documents/${vehicleId}`);
 
-  const update: Record<string, unknown> = { note, owner };
+  const update: Record<string, unknown> = { owner };
   if (hasExpiry) update.due_date = dueDate;
-  if (fileUrl) update.file_url = fileUrl;
+
+  if (fileUrl) {
+    const { data: current } = await supabase.from('documents').select('file_url').eq('id', documentId).single();
+    await deleteOldFile(supabase, current?.file_url || null);
+    update.file_url = fileUrl;
+  }
 
   await supabase.from('documents').update(update).eq('id', documentId);
   await supabase.from('document_history').insert({
     document_id: documentId,
     due_date: dueDate,
     file_url: fileUrl,
-    note,
     owner,
     created_by: profile.id,
   });
@@ -138,6 +151,30 @@ export async function addDelivery(formData: FormData) {
 
   revalidatePath(`/vehicles/${vehicleId}`);
   revalidatePath('/dashboard');
+}
+
+export async function updateDeliveryPhotos(formData: FormData) {
+  const { supabase } = await currentProfile();
+  const vehicleId = String(formData.get('vehicleId'));
+  const deliveryId = String(formData.get('deliveryId'));
+
+  const { data: existing } = await supabase.from('delivery_photos').select('*').eq('delivery_id', deliveryId);
+
+  for (const slot of DELIVERY_PHOTO_SLOTS) {
+    const file = formData.get(`photo_${slot.key}`);
+    if (!(file instanceof File) || file.size === 0) continue;
+    const url = await uploadIfPresent(supabase, file, `deliveries/${deliveryId}`);
+    if (!url) continue;
+    const current = (existing || []).find((p: any) => p.slot === slot.key);
+    if (current) {
+      await deleteOldFile(supabase, current.photo_url);
+      await supabase.from('delivery_photos').update({ photo_url: url }).eq('id', current.id);
+    } else {
+      await supabase.from('delivery_photos').insert({ delivery_id: deliveryId, slot: slot.key, photo_url: url });
+    }
+  }
+
+  revalidatePath(`/vehicles/${vehicleId}`);
 }
 
 export async function deleteVehicle(formData: FormData) {
