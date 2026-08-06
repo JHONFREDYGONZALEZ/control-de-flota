@@ -158,3 +158,41 @@ export function fmtDateTime(iso: string | null) {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
 }
+
+export function waNumber(phone: string | null | undefined) {
+  const digits = (phone || '').replace(/\D/g, '');
+  if (digits.length === 10) return '57' + digits; // número colombiano sin indicativo
+  return digits;
+}
+
+export function buildOrderWhatsappText(order: {
+  companyName: string;
+  placa: string;
+  marca: string;
+  modelo: string;
+  anio: number | null;
+  currentKm: number | null;
+  maintenanceName: string;
+  providerName: string;
+  providerPhone: string | null;
+  notes: string | null;
+}) {
+  return [
+    'ORDEN DE TRABAJO (APROBADA)',
+    `Empresa: ${order.companyName}`,
+    `Fecha: ${fmtDate(new Date().toISOString().slice(0, 10))}`,
+    '',
+    `Vehículo: ${order.placa} — ${order.marca} ${order.modelo} ${order.anio || ''}`,
+    `Kilometraje actual: ${fmtKm(order.currentKm)}`,
+    '',
+    `Servicio solicitado: ${order.maintenanceName}`,
+    `Proveedor: ${order.providerName}${order.providerPhone ? ' (' + order.providerPhone + ')' : ''}`,
+    '',
+    'Instrucciones / notas:',
+    order.notes ? order.notes : 'ninguna',
+  ].join('\n');
+}
+
+export function waLink(phone: string | null | undefined, text: string) {
+  return `https://wa.me/${waNumber(phone)}?text=${encodeURIComponent(text)}`;
+}

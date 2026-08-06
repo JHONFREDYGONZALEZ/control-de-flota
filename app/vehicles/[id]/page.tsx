@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { docStatus, maintStatus, statusLabel, fmtDate, fmtKm, fmtDateTime, kmFridayNeedsAlert, DELIVERY_PHOTO_SLOTS } from '@/lib/fleet';
+import { docStatus, maintStatus, statusLabel, fmtDate, fmtKm, fmtDateTime, kmFridayNeedsAlert, DELIVERY_PHOTO_SLOTS, buildOrderWhatsappText, waLink } from '@/lib/fleet';
 import { registerKm, generateWorkOrder, updateWorkOrder } from '@/app/actions';
 import PhotoField from '@/components/PhotoField';
 import MaintenanceTypeField from '@/components/MaintenanceTypeField';
@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 export default async function VehiclePage({ params }: { params: { id: string } }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user!.id).single();
+  const { data: profile } = await supabase.from('profiles').select('*, companies(name)').eq('id', user!.id).single();
   const isAdmin = profile!.role === 'admin';
   const canEditApproved = profile!.role === 'admin' || profile!.role === 'gerencia';
 
@@ -359,6 +359,31 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                 <span className={`status-tag ${o.approved ? 'status-ok' : 'status-warning'}`}>
                   {o.approved ? 'Aprobada por gerencia' : 'Pendiente aprobación'}
                 </span>
+                {o.approved && o.providers?.phone && (
+                  <a
+                    href={waLink(
+                      o.providers.phone,
+                      buildOrderWhatsappText({
+                        companyName: profile!.companies?.name || 'Mi empresa',
+                        placa: vehicle.placa,
+                        marca: vehicle.marca,
+                        modelo: vehicle.modelo,
+                        anio: vehicle.anio,
+                        currentKm: vehicle.current_km,
+                        maintenanceName: o.maintenance_name,
+                        providerName: o.providers.name,
+                        providerPhone: o.providers.phone,
+                        notes: o.notes,
+                      })
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-sm btn-primary"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    Enviar por WhatsApp
+                  </a>
+                )}
                 <span className={`status-tag ${o.invoiced ? 'status-ok' : 'status-pending'}`}>
                   {o.invoiced ? `Facturada #${o.invoice_number}` : 'Sin facturar'}
                 </span>

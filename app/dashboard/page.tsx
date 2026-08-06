@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import { getDashboardData } from '@/lib/getDashboardData';
-import { fmtKm, fmtDateTime } from '@/lib/fleet';
+import { fmtKm, fmtDateTime, buildOrderWhatsappText, waLink } from '@/lib/fleet';
 import { signOut } from '../login/actions';
 import {
   registerKm,
   deleteObservation,
   approveWorkOrder,
   invoiceWorkOrder,
+  deleteWorkOrder,
 } from '../actions';
 
 export const dynamic = 'force-dynamic';
@@ -135,7 +136,34 @@ export default async function DashboardPage() {
               <p className="text-dim text-xs mt-1">proveedor: {o.provider_name}</p>
               <div className="flex flex-wrap gap-2 mt-2 items-center">
                 {o.approved ? (
-                  <span className="status-tag status-ok">Aprobada por gerencia</span>
+                  <>
+                    <span className="status-tag status-ok">Aprobada por gerencia</span>
+                    {o.provider_phone && (
+                      <a
+                        href={waLink(
+                          o.provider_phone,
+                          buildOrderWhatsappText({
+                            companyName: profile.companies?.name || 'Mi empresa',
+                            placa: o.vehicle.placa,
+                            marca: o.vehicle.marca,
+                            modelo: o.vehicle.modelo,
+                            anio: o.vehicle.anio,
+                            currentKm: o.vehicle.current_km,
+                            maintenanceName: o.maintenance_name,
+                            providerName: o.provider_name,
+                            providerPhone: o.provider_phone,
+                            notes: o.notes,
+                          })
+                        )}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-sm btn-primary"
+                        style={{ textDecoration: 'none' }}
+                      >
+                        Enviar por WhatsApp
+                      </a>
+                    )}
+                  </>
                 ) : canApprove ? (
                   <form action={approveWorkOrder}>
                     <input type="hidden" name="orderId" value={o.id} />
@@ -164,6 +192,12 @@ export default async function DashboardPage() {
                       </button>
                     </form>
                   </details>
+                )}
+                {(!o.approved || canApprove) && (
+                  <form action={deleteWorkOrder}>
+                    <input type="hidden" name="orderId" value={o.id} />
+                    <button className="btn btn-sm btn-danger">Eliminar</button>
+                  </form>
                 )}
               </div>
             </div>

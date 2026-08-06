@@ -145,6 +145,19 @@ export async function updateWorkOrder(formData: FormData) {
   revalidatePath(`/vehicles/${vehicleId}`);
 }
 
+export async function deleteWorkOrder(formData: FormData) {
+  const { supabase, profile } = await currentProfile();
+  const orderId = String(formData.get('orderId'));
+
+  const { data: order } = await supabase.from('work_orders').select('approved').eq('id', orderId).single();
+  if (order?.approved && profile.role !== 'admin' && profile.role !== 'gerencia') {
+    throw new Error('Esta orden ya fue aprobada; solo gerencia o un administrador pueden eliminarla');
+  }
+
+  await supabase.from('work_orders').delete().eq('id', orderId);
+  revalidatePath('/dashboard');
+}
+
 export async function approveWorkOrder(formData: FormData) {
   const { supabase, profile } = await currentProfile();
   if (profile.role !== 'admin' && profile.role !== 'gerencia') {

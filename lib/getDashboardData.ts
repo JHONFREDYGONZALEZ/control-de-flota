@@ -61,7 +61,7 @@ export async function getDashboardData() {
   );
 
   const allWorkOrders = vehiclesWithSummary
-    .flatMap((v) => (v.work_orders || []).map((o: any) => ({ ...o, vehicle: { id: v.id, placa: v.placa } })))
+    .flatMap((v) => (v.work_orders || []).map((o: any) => ({ ...o, vehicle: { id: v.id, placa: v.placa, marca: v.marca, modelo: v.modelo, anio: v.anio, current_km: v.current_km } })))
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   return { profile, vehicles: vehiclesWithSummary, observations: observations || [], providers: providers || [], allWorkOrders };
