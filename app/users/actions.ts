@@ -81,13 +81,13 @@ export async function removeUserAccess(formData: FormData) {
 
   const admin = createAdminClient();
   await admin.auth.admin.deleteUser(userId);
-  await supabase.from('profiles').delete().eq('id', userId);
+  await admin.from('profiles').delete().eq('id', userId);
 
   revalidatePath('/users');
 }
 
 export async function changeUserRole(formData: FormData) {
-  const { supabase, profile } = await currentAdminProfile();
+  const { profile } = await currentAdminProfile();
   const userId = String(formData.get('userId'));
   const role = String(formData.get('role'));
 
@@ -95,6 +95,8 @@ export async function changeUserRole(formData: FormData) {
     throw new Error('No puedes quitarte a ti mismo el rol de administrador');
   }
 
-  await supabase.from('profiles').update({ role }).eq('id', userId);
+  const admin = createAdminClient();
+  const { error } = await admin.from('profiles').update({ role }).eq('id', userId);
+  if (error) throw new Error(error.message);
   revalidatePath('/users');
 }

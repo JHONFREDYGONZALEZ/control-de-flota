@@ -15,6 +15,7 @@ async function currentProfile() {
 
 export async function addVehicle(formData: FormData) {
   const { supabase, profile } = await currentProfile();
+  if (profile.role !== 'admin') throw new Error('Solo un administrador puede agregar vehículos');
   const placa = String(formData.get('placa') || '').toUpperCase().trim();
   const marca = String(formData.get('marca') || '').trim();
   const modelo = String(formData.get('modelo') || '').trim();

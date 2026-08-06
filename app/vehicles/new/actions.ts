@@ -10,6 +10,7 @@ export async function addVehicleFromDashboard(formData: FormData) {
   if (!user) throw new Error('No autenticado');
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
   if (!profile) throw new Error('Perfil no encontrado');
+  if (profile.role !== 'admin') throw new Error('Solo un administrador puede agregar vehículos');
 
   const placa = String(formData.get('placa') || '').toUpperCase().trim();
   const marca = String(formData.get('marca') || '').trim();

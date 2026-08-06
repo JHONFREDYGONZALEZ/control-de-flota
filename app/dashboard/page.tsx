@@ -12,7 +12,7 @@ import {
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  const { profile, vehicles, observations, providers, allWorkOrders } = await getDashboardData();
+  const { profile, vehicles, observations, allWorkOrders } = await getDashboardData();
   const isAdmin = profile.role === 'admin';
   const canApprove = profile.role === 'admin' || profile.role === 'gerencia';
 
