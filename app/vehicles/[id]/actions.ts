@@ -2,7 +2,8 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { DELIVERY_PHOTO_SLOTS } from '@/lib/fleet';
+import { redirect } from 'next/navigation';
+import { DELIVERY_PHOTO_SLOTS, toTitleCase } from '@/lib/fleet';
 
 async function currentProfile() {
   const supabase = createClient();
@@ -178,9 +179,26 @@ export async function updateDeliveryPhotos(formData: FormData) {
   revalidatePath(`/vehicles/${vehicleId}`);
 }
 
+export async function updateVehicleInfo(formData: FormData) {
+  const { supabase, profile } = await currentProfile();
+  if (profile.role !== 'admin') throw new Error('Solo un administrador puede modificar los datos del vehículo');
+  const vehicleId = String(formData.get('vehicleId'));
+  const placa = String(formData.get('placa') || '').toUpperCase().trim();
+  const marca = toTitleCase(String(formData.get('marca') || ''));
+  const modelo = toTitleCase(String(formData.get('modelo') || ''));
+  const anio = formData.get('anio') ? Number(formData.get('anio')) : null;
+
+  if (!placa || !marca || !modelo) throw new Error('Completa placa, marca y modelo');
+
+  await supabase.from('vehicles').update({ placa, marca, modelo, anio }).eq('id', vehicleId);
+  revalidatePath(`/vehicles/${vehicleId}`);
+  revalidatePath('/dashboard');
+}
+
 export async function deleteVehicle(formData: FormData) {
   const { supabase, profile } = await currentProfile();
   if (profile.role !== 'admin') throw new Error('Solo un administrador puede eliminar vehículos');
   await supabase.from('vehicles').delete().eq('id', String(formData.get('vehicleId')));
   revalidatePath('/dashboard');
+  redirect('/dashboard');
 }

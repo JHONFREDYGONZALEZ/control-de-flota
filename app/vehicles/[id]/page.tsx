@@ -9,8 +9,10 @@ import MaintenanceKmFields from '@/components/MaintenanceKmFields';
 import DocumentFileField from '@/components/DocumentFileField';
 import NotApplicableDateField from '@/components/NotApplicableDateField';
 import CancelDetailsButton from '@/components/CancelDetailsButton';
-import { updateDocument, addCustomDocument, updateMaintenanceItem, addCustomMaintenanceItem, addDelivery, updateDeliveryPhotos, deleteVehicle } from './actions';
+import { updateDocument, addCustomDocument, updateMaintenanceItem, addCustomMaintenanceItem, addDelivery, updateDeliveryPhotos, updateVehicleInfo, deleteVehicle } from './actions';
 import SubmitButton from '@/components/SubmitButton';
+import SaveFeedback from '@/components/SaveFeedback';
+import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,11 +48,47 @@ export default async function VehiclePage({ params }: { params: { id: string } }
           <p className="text-dim text-sm">
             {vehicle.marca} {vehicle.modelo} · {vehicle.anio}
           </p>
+          {isAdmin && (
+            <details className="form-details mt-2">
+              <summary className="btn btn-ghost btn-sm cursor-pointer list-none" style={{ paddingLeft: 0 }}>
+                Editar datos del vehículo
+              </summary>
+              <form action={updateVehicleInfo} className="card mt-2 space-y-3 max-w-xs">
+                <input type="hidden" name="vehicleId" value={vehicle.id} />
+                <div className="field">
+                  <label>Placa</label>
+                  <input name="placa" defaultValue={vehicle.placa} required style={{ textTransform: 'uppercase' }} />
+                </div>
+                <div className="field">
+                  <label>Marca</label>
+                  <input name="marca" defaultValue={vehicle.marca} required />
+                </div>
+                <div className="field">
+                  <label>Modelo</label>
+                  <input name="modelo" defaultValue={vehicle.modelo} required />
+                </div>
+                <div className="field">
+                  <label>Año</label>
+                  <input name="anio" type="number" defaultValue={vehicle.anio || ''} />
+                </div>
+                <div className="flex gap-2">
+                  <CancelDetailsButton />
+                  <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
+                  <SaveFeedback message="Datos del vehículo actualizados" />
+                </div>
+              </form>
+            </details>
+          )}
         </div>
         {isAdmin && (
           <form action={deleteVehicle}>
             <input type="hidden" name="vehicleId" value={vehicle.id} />
-            <SubmitButton className="btn btn-danger btn-sm">Eliminar vehículo</SubmitButton>
+            <ConfirmSubmitButton
+              className="btn btn-danger btn-sm"
+              confirmText={`¿Seguro que quieres eliminar el vehículo ${vehicle.placa}? Se borrará todo su historial (documentos, mantenimientos, entregas y órdenes). Esta acción no se puede deshacer.`}
+            >
+              Eliminar vehículo
+            </ConfirmSubmitButton>
           </form>
         )}
       </div>
@@ -69,6 +107,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
               <div className="flex gap-2">
                 <CancelDetailsButton />
                 <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
+                <SaveFeedback message="Kilometraje registrado" />
               </div>
             </form>
           </details>
@@ -95,11 +134,11 @@ export default async function VehiclePage({ params }: { params: { id: string } }
           const status = docStatus(doc);
           const label = doc.not_applicable
             ? 'No aplica'
+            : !doc.file_url
+            ? 'Sin archivo'
             : doc.has_expiry
             ? statusLabel(status)
-            : doc.file_url
-            ? 'Archivado'
-            : 'Sin archivo';
+            : 'Archivado';
           const isPropiedad = doc.name === 'Tarjeta de propiedad';
           const canBeNotApplicable = doc.name === 'Seguro todo riesgo' || doc.name === 'Tecnomecánica';
           return (
@@ -175,6 +214,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                     <div className="flex gap-2">
                       <CancelDetailsButton />
                       <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
+                      <SaveFeedback message="Documento guardado" />
                     </div>
                   </form>
                 </details>
@@ -191,6 +231,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
             <div className="flex gap-2">
               <CancelDetailsButton />
               <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
+              <SaveFeedback message="Documento agregado" />
             </div>
           </form>
         </details>
@@ -234,6 +275,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                     <div className="flex gap-2">
                       <CancelDetailsButton />
                       <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
+                      <SaveFeedback message="Mantenimiento actualizado" />
                     </div>
                   </form>
                 </details>
@@ -251,6 +293,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
             <div className="flex gap-2">
               <CancelDetailsButton />
               <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
+              <SaveFeedback message="Ítem agregado" />
             </div>
           </form>
         </details>
@@ -301,6 +344,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                   <div className="flex gap-2">
                     <CancelDetailsButton />
                     <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar fotos reemplazadas</SubmitButton>
+                    <SaveFeedback message="Fotos actualizadas" />
                   </div>
                 </form>
               </details>
@@ -354,6 +398,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
             <div className="flex gap-2">
               <CancelDetailsButton />
               <SubmitButton className="btn btn-primary flex-1">Guardar</SubmitButton>
+              <SaveFeedback message="Entrega registrada" />
             </div>
           </form>
         </details>
@@ -430,6 +475,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                       <div className="flex gap-2">
                         <CancelDetailsButton />
                         <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar cambios</SubmitButton>
+                        <SaveFeedback message="Orden actualizada" />
                       </div>
                     </form>
                   </details>
@@ -471,6 +517,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
               <div className="flex gap-2">
                 <CancelDetailsButton />
                 <SubmitButton className="btn btn-primary flex-1">Generar orden</SubmitButton>
+                <SaveFeedback message="Orden generada" />
               </div>
             </form>
           </details>

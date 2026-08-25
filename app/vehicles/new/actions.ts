@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { DOC_TEMPLATES, MAINT_TEMPLATES } from '@/lib/fleet';
+import { DOC_TEMPLATES, MAINT_TEMPLATES, toTitleCase } from '@/lib/fleet';
 
 export async function addVehicleFromDashboard(formData: FormData) {
   const supabase = createClient();
@@ -13,8 +13,8 @@ export async function addVehicleFromDashboard(formData: FormData) {
   if (profile.role !== 'admin') throw new Error('Solo un administrador puede agregar vehículos');
 
   const placa = String(formData.get('placa') || '').toUpperCase().trim();
-  const marca = String(formData.get('marca') || '').trim();
-  const modelo = String(formData.get('modelo') || '').trim();
+  const marca = toTitleCase(String(formData.get('marca') || ''));
+  const modelo = toTitleCase(String(formData.get('modelo') || ''));
   const anio = formData.get('anio') ? Number(formData.get('anio')) : null;
   const kmInicial = formData.get('kmInicial') ? Number(formData.get('kmInicial')) : null;
 

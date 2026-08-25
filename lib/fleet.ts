@@ -17,6 +17,7 @@ export function daysUntil(dateStr: string) {
 export function docStatus(doc: { has_expiry: boolean; due_date: string | null; alert_days: number; file_url: string | null; not_applicable?: boolean }): Status {
   if (doc.not_applicable) return 'na';
   if (!doc.has_expiry) return doc.file_url ? 'ok' : 'expired';
+  if (!doc.file_url) return 'expired';
   if (!doc.due_date) return 'pending';
   const days = daysUntil(doc.due_date);
   if (days < 0) return 'expired';
@@ -77,11 +78,11 @@ export function computeVehicleSummary(input: {
     const s = docStatus(d);
     if (s === 'expired' || s === 'warning') {
       let detail = '';
-      if (d.has_expiry && d.due_date) {
+      if (!d.file_url) {
+        detail = 'sin archivo cargado';
+      } else if (d.has_expiry && d.due_date) {
         const days = daysUntil(d.due_date);
         detail = days < 0 ? `vencido hace ${Math.abs(days)}d` : `vence en ${days}d`;
-      } else if (!d.has_expiry) {
-        detail = 'sin archivo cargado';
       }
       alertItems.push({ name: d.name, status: s, detail });
     }
@@ -196,4 +197,13 @@ export function buildOrderWhatsappText(order: {
 
 export function waLink(phone: string | null | undefined, text: string) {
   return `https://wa.me/${waNumber(phone)}?text=${encodeURIComponent(text)}`;
+}
+
+export function toTitleCase(str: string) {
+  return str
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : w))
+    .join(' ');
 }
