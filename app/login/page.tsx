@@ -1,11 +1,12 @@
 import { signIn } from './actions';
 import Link from 'next/link';
 import PasswordField from '@/components/PasswordField';
+import SubmitButton from '@/components/SubmitButton';
 
 export default function LoginPage({ searchParams }: { searchParams: { error?: string } }) {
   return (
     <div className="max-w-[420px] mx-auto mt-16 text-center px-4">
-      <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-amber to-red mx-auto mb-4 flex items-center justify-center font-display font-bold text-bg text-xl">
+      <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-amber to-red mx-auto mb-4 flex items-center justify-center font-display font-bold text-white text-xl">
         CF
       </div>
       <h1 className="font-display text-2xl uppercase mb-1">Control de flota</h1>
@@ -23,9 +24,7 @@ export default function LoginPage({ searchParams }: { searchParams: { error?: st
           <input type="email" name="email" required autoFocus />
         </div>
         <PasswordField name="password" label="Contraseña" />
-        <button type="submit" className="btn btn-primary w-full">
-          Entrar
-        </button>
+        <SubmitButton className="btn btn-primary w-full">Entrar</SubmitButton>
       </form>
 
       <p className="text-dim text-xs mt-5">

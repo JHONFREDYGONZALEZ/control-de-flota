@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { getDashboardData } from '@/lib/getDashboardData';
 import { fmtKm, fmtDateTime, buildOrderWhatsappText, waLink } from '@/lib/fleet';
 import { signOut } from '../login/actions';
+import SubmitButton from '@/components/SubmitButton';
+import CancelDetailsButton from '@/components/CancelDetailsButton';
 import {
   registerKm,
   deleteObservation,
@@ -24,7 +26,7 @@ export default async function DashboardPage() {
       {/* topbar */}
       <div className="flex items-center justify-between border-b border-border pb-4 mb-5 flex-wrap gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-8.5 h-8.5 rounded-lg bg-gradient-to-br from-amber to-red flex items-center justify-center font-display font-bold text-bg text-sm">
+          <div className="w-8.5 h-8.5 rounded-lg bg-gradient-to-br from-amber to-red flex items-center justify-center font-display font-bold text-white text-sm">
             CF
           </div>
           <h1 className="font-display text-lg">{profile.companies?.name || 'Mi empresa'}</h1>
@@ -53,7 +55,7 @@ export default async function DashboardPage() {
       {/* alertas */}
       <div className="card mb-4 !p-0 overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-3.5 border-b border-border">
-          <span className="w-2.5 h-2.5 rounded-full bg-red shadow-[0_0_8px_theme(colors.red)]" />
+          <span className="w-2.5 h-2.5 rounded-full bg-red" />
           <h3 className="text-sm font-display">
             {vehiclesWithAlerts.length === 0
               ? 'Sin alertas activas'
@@ -88,7 +90,7 @@ export default async function DashboardPage() {
       {/* observaciones */}
       <div className="card mb-4 !p-0 overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-3.5 border-b border-border">
-          <span className="w-2.5 h-2.5 rounded-full bg-blue shadow-[0_0_8px_theme(colors.blue)]" />
+          <span className="w-2.5 h-2.5 rounded-full bg-blue" />
           <h3 className="text-sm font-display">Observaciones de kilometraje</h3>
         </div>
         {observations.length === 0 ? (
@@ -103,7 +105,7 @@ export default async function DashboardPage() {
                 {isAdmin && (
                   <form action={deleteObservation}>
                     <input type="hidden" name="observationId" value={o.id} />
-                    <button className="btn btn-sm btn-danger">Eliminar</button>
+                    <SubmitButton className="btn btn-sm btn-danger">Eliminar</SubmitButton>
                   </form>
                 )}
               </div>
@@ -116,7 +118,7 @@ export default async function DashboardPage() {
       {/* órdenes de trabajo */}
       <div className="card mb-4 !p-0 overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-3.5 border-b border-border">
-          <span className="w-2.5 h-2.5 rounded-full bg-teal shadow-[0_0_8px_theme(colors.teal)]" />
+          <span className="w-2.5 h-2.5 rounded-full bg-teal" />
           <h3 className="text-sm font-display flex-1">Órdenes de trabajo</h3>
         </div>
         {allWorkOrders.length === 0 ? (
@@ -167,7 +169,7 @@ export default async function DashboardPage() {
                 ) : canApprove ? (
                   <form action={approveWorkOrder}>
                     <input type="hidden" name="orderId" value={o.id} />
-                    <button className="btn btn-sm btn-primary">Aprobar</button>
+                    <SubmitButton className="btn btn-sm btn-primary">Aprobar</SubmitButton>
                   </form>
                 ) : (
                   <span className="status-tag status-warning">Pendiente aprobación</span>
@@ -175,8 +177,8 @@ export default async function DashboardPage() {
                 {o.invoiced ? (
                   <span className="status-tag status-ok">Facturada #{o.invoice_number}</span>
                 ) : (
-                  <details>
-                    <summary className="btn btn-sm cursor-pointer list-none">Facturar</summary>
+                  <details className="form-details">
+                    <summary className="btn btn-sm cursor-pointer list-none">Facturado</summary>
                     <form action={invoiceWorkOrder} className="mt-2 space-y-2 w-64">
                       <input type="hidden" name="orderId" value={o.id} />
                       <div className="field">
@@ -187,16 +189,17 @@ export default async function DashboardPage() {
                         <label>Número de factura</label>
                         <input name="invoiceNumber" required />
                       </div>
-                      <button type="submit" className="btn btn-primary btn-sm w-full">
-                        Guardar
-                      </button>
+                      <div className="flex gap-2">
+                        <CancelDetailsButton />
+                        <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
+                      </div>
                     </form>
                   </details>
                 )}
                 {(!o.approved || canApprove) && (
                   <form action={deleteWorkOrder}>
                     <input type="hidden" name="orderId" value={o.id} />
-                    <button className="btn btn-sm btn-danger">Eliminar</button>
+                    <SubmitButton className="btn btn-sm btn-danger">Eliminar</SubmitButton>
                   </form>
                 )}
               </div>
@@ -222,9 +225,9 @@ export default async function DashboardPage() {
             <span
               className={`absolute top-3.5 right-3.5 w-2.5 h-2.5 rounded-full ${
                 v.summary.worst === 'expired'
-                  ? 'bg-red shadow-[0_0_8px_theme(colors.red)]'
+                  ? 'bg-red'
                   : v.summary.worst === 'warning'
-                  ? 'bg-amber shadow-[0_0_8px_theme(colors.amber)]'
+                  ? 'bg-amber'
                   : 'bg-teal'
               }`}
             />
@@ -245,14 +248,15 @@ export default async function DashboardPage() {
               <span>
                 Km: <strong className="font-mono">{fmtKm(v.current_km)}</strong>
               </span>
-              <details>
+              <details className="form-details">
                 <summary className="btn btn-sm cursor-pointer list-none">Registrar km</summary>
                 <form action={registerKm} className="mt-2 space-y-2">
                   <input type="hidden" name="vehicleId" value={v.id} />
                   <input name="km" type="number" min="0" required placeholder="Km actual" />
-                  <button type="submit" className="btn btn-primary btn-sm w-full">
-                    Guardar
-                  </button>
+                  <div className="flex gap-2">
+                    <CancelDetailsButton />
+                    <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
+                  </div>
                 </form>
               </details>
             </div>

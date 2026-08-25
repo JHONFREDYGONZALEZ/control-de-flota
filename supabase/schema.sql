@@ -66,6 +66,7 @@ create table if not exists documents (
   owner text,
   note text,
   file_url text,
+  not_applicable boolean not null default false,
   created_at timestamptz not null default now()
 );
 

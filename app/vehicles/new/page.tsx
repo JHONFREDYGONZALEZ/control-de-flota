@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { addVehicleFromDashboard } from './actions';
+import SubmitButton from '@/components/SubmitButton';
 
 export default function NewVehiclePage() {
   return (
@@ -33,9 +34,7 @@ export default function NewVehiclePage() {
           <Link href="/dashboard" className="btn btn-ghost flex-1 text-center">
             Cancelar
           </Link>
-          <button type="submit" className="btn btn-primary flex-1">
-            Guardar
-          </button>
+          <SubmitButton className="btn btn-primary flex-1">Guardar</SubmitButton>
         </div>
       </form>
     </div>

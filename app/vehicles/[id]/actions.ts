@@ -38,11 +38,12 @@ export async function updateDocument(formData: FormData) {
   const documentId = String(formData.get('documentId'));
   const vehicleId = String(formData.get('vehicleId'));
   const hasExpiry = formData.get('hasExpiry') === '1';
-  const dueDate = hasExpiry ? String(formData.get('dueDate') || '') || null : null;
+  const notApplicable = formData.get('notApplicable') === '1';
+  const dueDate = hasExpiry && !notApplicable ? String(formData.get('dueDate') || '') || null : null;
   const owner = String(formData.get('owner') || '') || null;
   const fileUrl = await uploadIfPresent(supabase, formData.get('file'), `documents/${vehicleId}`);
 
-  const update: Record<string, unknown> = { owner };
+  const update: Record<string, unknown> = { owner, not_applicable: notApplicable };
   if (hasExpiry) update.due_date = dueDate;
 
   if (fileUrl) {

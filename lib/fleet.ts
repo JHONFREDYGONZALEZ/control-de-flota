@@ -1,10 +1,10 @@
-export type Status = 'expired' | 'warning' | 'ok' | 'pending';
+export type Status = 'expired' | 'warning' | 'ok' | 'pending' | 'na';
 
 export function statusPriority(s: Status) {
-  return { expired: 3, warning: 2, pending: 1, ok: 0 }[s];
+  return { expired: 3, warning: 2, pending: 1, ok: 0, na: 0 }[s];
 }
 export function statusLabel(s: Status) {
-  return { expired: 'Vencido', warning: 'Próximo', ok: 'Vigente', pending: 'Sin datos' }[s];
+  return { expired: 'Vencido', warning: 'Próximo', ok: 'Vigente', pending: 'Sin datos', na: 'No aplica' }[s];
 }
 
 export function daysUntil(dateStr: string) {
@@ -14,7 +14,8 @@ export function daysUntil(dateStr: string) {
   return Math.round((d.getTime() - t.getTime()) / 86400000);
 }
 
-export function docStatus(doc: { has_expiry: boolean; due_date: string | null; alert_days: number; file_url: string | null }): Status {
+export function docStatus(doc: { has_expiry: boolean; due_date: string | null; alert_days: number; file_url: string | null; not_applicable?: boolean }): Status {
+  if (doc.not_applicable) return 'na';
   if (!doc.has_expiry) return doc.file_url ? 'ok' : 'expired';
   if (!doc.due_date) return 'pending';
   const days = daysUntil(doc.due_date);
@@ -61,7 +62,7 @@ export function isOverdueUnbilled(createdAt: string) {
 export type AlertItem = { name: string; status: Status; detail: string };
 
 export function computeVehicleSummary(input: {
-  documents: { name: string; has_expiry: boolean; due_date: string | null; alert_days: number; file_url: string | null }[];
+  documents: { name: string; has_expiry: boolean; due_date: string | null; alert_days: number; file_url: string | null; not_applicable?: boolean }[];
   maintenance_items: { name: string; due_km: number | null; alert_km: number }[];
   work_orders: { maintenance_name: string; provider_name?: string; invoiced: boolean; created_at: string }[];
   current_km: number | null;

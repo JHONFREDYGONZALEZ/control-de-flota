@@ -5,9 +5,12 @@ import { docStatus, maintStatus, statusLabel, fmtDate, fmtKm, fmtDateTime, kmFri
 import { registerKm, generateWorkOrder, updateWorkOrder } from '@/app/actions';
 import PhotoField from '@/components/PhotoField';
 import MaintenanceTypeField from '@/components/MaintenanceTypeField';
+import MaintenanceKmFields from '@/components/MaintenanceKmFields';
 import DocumentFileField from '@/components/DocumentFileField';
+import NotApplicableDateField from '@/components/NotApplicableDateField';
 import CancelDetailsButton from '@/components/CancelDetailsButton';
 import { updateDocument, addCustomDocument, updateMaintenanceItem, addCustomMaintenanceItem, addDelivery, updateDeliveryPhotos, deleteVehicle } from './actions';
+import SubmitButton from '@/components/SubmitButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,7 +50,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
         {isAdmin && (
           <form action={deleteVehicle}>
             <input type="hidden" name="vehicleId" value={vehicle.id} />
-            <button className="btn btn-danger btn-sm">Eliminar vehículo</button>
+            <SubmitButton className="btn btn-danger btn-sm">Eliminar vehículo</SubmitButton>
           </form>
         )}
       </div>
@@ -58,16 +61,14 @@ export default async function VehiclePage({ params }: { params: { id: string } }
           <div>
             Kilometraje actual: <span className="font-mono text-lg font-bold">{fmtKm(vehicle.current_km)}</span>
           </div>
-          <details>
+          <details className="form-details">
             <summary className="btn btn-primary btn-sm cursor-pointer list-none">Registrar kilometraje</summary>
             <form action={registerKm} className="mt-2 space-y-2 w-56">
               <input type="hidden" name="vehicleId" value={vehicle.id} />
               <input name="km" type="number" min="0" defaultValue={vehicle.current_km || ''} required />
               <div className="flex gap-2">
                 <CancelDetailsButton />
-                <button type="submit" className="btn btn-primary btn-sm flex-1">
-                  Guardar
-                </button>
+                <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
               </div>
             </form>
           </details>
@@ -92,14 +93,25 @@ export default async function VehiclePage({ params }: { params: { id: string } }
         <h3 className="text-xs uppercase text-dim tracking-wide mb-3">1 · Documentos</h3>
         {(documents || []).map((doc) => {
           const status = docStatus(doc);
-          const label = doc.has_expiry ? statusLabel(status) : doc.file_url ? 'Archivado' : 'Sin archivo';
+          const label = doc.not_applicable
+            ? 'No aplica'
+            : doc.has_expiry
+            ? statusLabel(status)
+            : doc.file_url
+            ? 'Archivado'
+            : 'Sin archivo';
           const isPropiedad = doc.name === 'Tarjeta de propiedad';
+          const canBeNotApplicable = doc.name === 'Seguro todo riesgo' || doc.name === 'Tecnomecánica';
           return (
             <div key={doc.id} className="card flex justify-between items-start mb-2.5 flex-wrap gap-2">
               <div>
                 <div className="font-semibold text-sm">{doc.name}</div>
                 <div className="text-dim text-xs mt-1">
-                  {doc.has_expiry ? `Vence: ${fmtDate(doc.due_date)}` : 'Sin fecha de vencimiento'}
+                  {doc.not_applicable
+                    ? 'No aplica a este vehículo'
+                    : doc.has_expiry
+                    ? `Vence: ${fmtDate(doc.due_date)}`
+                    : 'Sin fecha de vencimiento'}
                   {doc.file_url && (
                     <>
                       {' · '}
@@ -138,13 +150,16 @@ export default async function VehiclePage({ params }: { params: { id: string } }
               </div>
               <div className="flex items-center gap-2">
                 <span className={`status-tag status-${status}`}>{label}</span>
-                <details>
+                <details className="form-details">
                   <summary className="btn btn-sm btn-primary cursor-pointer list-none">Cargar / actualizar</summary>
                   <form action={updateDocument} className="mt-2 space-y-2 w-64" encType="multipart/form-data">
                     <input type="hidden" name="documentId" value={doc.id} />
                     <input type="hidden" name="vehicleId" value={vehicle.id} />
                     <input type="hidden" name="hasExpiry" value={doc.has_expiry ? '1' : '0'} />
-                    {doc.has_expiry && (
+                    {doc.has_expiry && canBeNotApplicable && (
+                      <NotApplicableDateField notApplicableDefault={doc.not_applicable} dueDateDefault={doc.due_date} />
+                    )}
+                    {doc.has_expiry && !canBeNotApplicable && (
                       <div className="field">
                         <label>Fecha de vencimiento</label>
                         <input type="date" name="dueDate" defaultValue={doc.due_date || ''} required />
@@ -159,9 +174,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                     <DocumentFileField name="file" existingUrl={doc.file_url} />
                     <div className="flex gap-2">
                       <CancelDetailsButton />
-                      <button type="submit" className="btn btn-primary btn-sm flex-1">
-                        Guardar
-                      </button>
+                      <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
                     </div>
                   </form>
                 </details>
@@ -169,7 +182,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
             </div>
           );
         })}
-        <details>
+        <details className="form-details">
           <summary className="btn cursor-pointer list-none">+ Agregar documento personalizado</summary>
           <form action={addCustomDocument} className="card mt-2 space-y-2">
             <input type="hidden" name="vehicleId" value={vehicle.id} />
@@ -177,9 +190,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
             <input type="date" name="dueDate" />
             <div className="flex gap-2">
               <CancelDetailsButton />
-              <button type="submit" className="btn btn-primary btn-sm flex-1">
-                Guardar
-              </button>
+              <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
             </div>
           </form>
         </details>
@@ -190,6 +201,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
         <h3 className="text-xs uppercase text-dim tracking-wide mb-3">2 · Parámetros mantenimiento y reparaciones</h3>
         {(items || []).map((it) => {
           const s = maintStatus(it, vehicle.current_km);
+          const needsPhoto = it.name !== 'Cambio de aceite' && it.name !== 'Lavado';
           return (
             <div key={it.id} className="card flex justify-between items-start mb-2.5 flex-wrap gap-2">
               <div className="flex-1 min-w-[180px]">
@@ -200,36 +212,28 @@ export default async function VehiclePage({ params }: { params: { id: string } }
               </div>
               <div className="flex items-center gap-2">
                 <span className={`status-tag status-${s}`}>{statusLabel(s)}</span>
-                <details>
+                <details className="form-details">
                   <summary className="btn btn-sm btn-primary cursor-pointer list-none">Actualizar</summary>
                   <form action={updateMaintenanceItem} className="mt-2 space-y-2 w-72" encType="multipart/form-data">
                     <input type="hidden" name="itemId" value={it.id} />
                     <input type="hidden" name="vehicleId" value={vehicle.id} />
-                    <div className="field">
-                      <label>Km del mantenimiento</label>
-                      <input name="lastKm" type="number" defaultValue={it.last_km ?? vehicle.current_km ?? ''} required />
-                    </div>
-                    <div className="field">
-                      <label>Frecuencia en km</label>
-                      <input name="intervalKm" type="number" defaultValue={it.interval_km || ''} />
-                    </div>
-                    <div className="field">
-                      <label>Próximo mantenimiento (km)</label>
-                      <input name="dueKm" type="number" defaultValue={it.due_km || ''} required />
-                    </div>
+                    <MaintenanceKmFields
+                      lastKmDefault={it.last_km ?? vehicle.current_km ?? null}
+                      intervalKmDefault={it.interval_km}
+                    />
                     <div className="field">
                       <label>Orden de trabajo (texto)</label>
                       <textarea name="details" rows={3} placeholder="Detalle del trabajo o pega el texto de la orden" />
                     </div>
-                    <div className="field">
-                      <label>Foto (opcional)</label>
-                      <input type="file" name="photo" accept="image/*,.pdf" />
-                    </div>
+                    {needsPhoto && (
+                      <div className="field">
+                        <label>Foto (opcional)</label>
+                        <input type="file" name="photo" accept="image/*,.pdf" />
+                      </div>
+                    )}
                     <div className="flex gap-2">
                       <CancelDetailsButton />
-                      <button type="submit" className="btn btn-primary btn-sm flex-1">
-                        Guardar
-                      </button>
+                      <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
                     </div>
                   </form>
                 </details>
@@ -237,7 +241,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
             </div>
           );
         })}
-        <details>
+        <details className="form-details">
           <summary className="btn cursor-pointer list-none">+ Agregar ítem de mantenimiento (otros)</summary>
           <form action={addCustomMaintenanceItem} className="card mt-2 space-y-2">
             <input type="hidden" name="vehicleId" value={vehicle.id} />
@@ -246,9 +250,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
             <input name="alertKm" type="number" placeholder="Alertar con cuántos km de anticipación" defaultValue={2000} />
             <div className="flex gap-2">
               <CancelDetailsButton />
-              <button type="submit" className="btn btn-primary btn-sm flex-1">
-                Guardar
-              </button>
+              <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
             </div>
           </form>
         </details>
@@ -278,7 +280,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
               ) : (
                 <div className="text-dim text-xs mt-1">Sin fotos adjuntas.</div>
               )}
-              <details className="mt-2">
+              <details className="mt-2 form-details">
                 <summary className="btn btn-sm cursor-pointer list-none">Reemplazar fotos</summary>
                 <form action={updateDeliveryPhotos} className="mt-2 space-y-3" encType="multipart/form-data">
                   <input type="hidden" name="vehicleId" value={vehicle.id} />
@@ -298,9 +300,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                   </div>
                   <div className="flex gap-2">
                     <CancelDetailsButton />
-                    <button type="submit" className="btn btn-primary btn-sm flex-1">
-                      Guardar fotos reemplazadas
-                    </button>
+                    <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar fotos reemplazadas</SubmitButton>
                   </div>
                 </form>
               </details>
@@ -330,7 +330,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
             </div>
           </details>
         )}
-        <details>
+        <details className="form-details">
           <summary className="btn btn-primary cursor-pointer list-none">+ Registrar entrega</summary>
           <form action={addDelivery} className="card mt-2 space-y-3" encType="multipart/form-data">
             <input type="hidden" name="vehicleId" value={vehicle.id} />
@@ -353,9 +353,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
             </div>
             <div className="flex gap-2">
               <CancelDetailsButton />
-              <button type="submit" className="btn btn-primary flex-1">
-                Guardar
-              </button>
+              <SubmitButton className="btn btn-primary flex-1">Guardar</SubmitButton>
             </div>
           </form>
         </details>
@@ -408,7 +406,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                   {o.invoiced ? `Facturada #${o.invoice_number}` : 'Sin facturar'}
                 </span>
                 {canEdit && (providers || []).length > 0 && (
-                  <details>
+                  <details className="form-details">
                     <summary className="btn btn-sm cursor-pointer list-none">Editar orden</summary>
                     <form action={updateWorkOrder} className="mt-2 space-y-2 w-72">
                       <input type="hidden" name="orderId" value={o.id} />
@@ -431,9 +429,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                       </div>
                       <div className="flex gap-2">
                         <CancelDetailsButton />
-                        <button type="submit" className="btn btn-primary btn-sm flex-1">
-                          Guardar cambios
-                        </button>
+                        <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar cambios</SubmitButton>
                       </div>
                     </form>
                   </details>
@@ -451,7 +447,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
             .
           </p>
         ) : (
-          <details>
+          <details className="form-details">
             <summary className="btn btn-primary cursor-pointer list-none">+ Generar orden de trabajo</summary>
             <form action={generateWorkOrder} className="card mt-2 space-y-3">
               <input type="hidden" name="vehicleId" value={vehicle.id} />
@@ -474,9 +470,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
               </div>
               <div className="flex gap-2">
                 <CancelDetailsButton />
-                <button type="submit" className="btn btn-primary flex-1">
-                  Generar orden
-                </button>
+                <SubmitButton className="btn btn-primary flex-1">Generar orden</SubmitButton>
               </div>
             </form>
           </details>

@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import PasswordField from '@/components/PasswordField';
 import { inviteUser, removeUserAccess, changeUserRole } from './actions';
+import SubmitButton from '@/components/SubmitButton';
+import CancelDetailsButton from '@/components/CancelDetailsButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,21 +54,19 @@ export default async function UsersPage({ searchParams }: { searchParams: { erro
                 <option value="gerencia">Gerencia</option>
                 <option value="admin">Administrador</option>
               </select>
-              <button type="submit" className="btn btn-sm">
-                Guardar
-              </button>
+              <SubmitButton className="btn btn-sm">Guardar</SubmitButton>
             </form>
             {u.id !== profile!.id && (
               <form action={removeUserAccess}>
                 <input type="hidden" name="userId" value={u.id} />
-                <button className="btn btn-sm btn-danger">Quitar acceso</button>
+                <SubmitButton className="btn btn-sm btn-danger">Quitar acceso</SubmitButton>
               </form>
             )}
           </div>
         </div>
       ))}
 
-      <details className="mt-4" open={!!searchParams.error || undefined}>
+      <details className="mt-4 form-details" open={!!searchParams.error || undefined}>
         <summary className="btn btn-primary cursor-pointer list-none">+ Invitar usuario</summary>
         <form action={inviteUser} className="card mt-2 space-y-3">
           {searchParams.error && (
@@ -89,9 +89,10 @@ export default async function UsersPage({ searchParams }: { searchParams: { erro
               <option value="admin">Administrador (gestiona vehículos y usuarios)</option>
             </select>
           </div>
-          <button type="submit" className="btn btn-primary w-full">
-            Crear usuario
-          </button>
+          <div className="flex gap-2">
+            <CancelDetailsButton />
+            <SubmitButton className="btn btn-primary flex-1">Crear usuario</SubmitButton>
+          </div>
         </form>
       </details>
     </div>

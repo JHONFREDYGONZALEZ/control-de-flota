@@ -5,17 +5,17 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: '#10151B',
-        panel: '#1A222C',
-        panelAlt: '#212B37',
-        panelHover: '#25303D',
-        border: '#2A3542',
-        text: '#E8EAED',
-        dim: '#8B96A5',
-        amber: '#F2A93B',
-        red: '#E4572E',
-        teal: '#3FA796',
-        blue: '#4C8DAE',
+        bg: '#F5F6F8',
+        panel: '#FFFFFF',
+        panelAlt: '#F0F1F4',
+        panelHover: '#E7E9ED',
+        border: '#DFE2E7',
+        text: '#181B20',
+        dim: '#5B6270',
+        amber: '#B45309',
+        red: '#DC2626',
+        teal: '#0D9488',
+        blue: '#2563EB',
       },
       fontFamily: {
         display: ['Oswald', 'sans-serif'],

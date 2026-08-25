@@ -4,9 +4,9 @@
 
 :root {
   /* le dice al navegador que sus propios controles (menús desplegables,
-     selector de fecha, autocompletado) deben usar colores oscuros,
-     para que no aparezcan con fondo blanco y letra blanca */
-  color-scheme: dark;
+     selector de fecha, autocompletado) deben usar colores claros,
+     acordes al resto de la aplicación */
+  color-scheme: light;
 }
 
 body {
@@ -26,7 +26,7 @@ body {
   @apply bg-panelHover;
 }
 .btn-primary {
-  @apply bg-amber border-amber text-[#1A130A] font-semibold;
+  @apply bg-amber border-amber text-white font-semibold;
 }
 .btn-danger {
   @apply border-red text-red;
@@ -35,7 +35,7 @@ body {
   @apply border-transparent bg-transparent text-dim;
 }
 .card {
-  @apply bg-panel border border-border rounded-xl2 p-4;
+  @apply bg-panel border border-border rounded-xl2 p-4 shadow-sm;
 }
 .field label {
   @apply block text-xs text-dim mb-1.5;
@@ -45,16 +45,23 @@ body {
 .field textarea {
   @apply w-full bg-panelAlt border border-border text-text px-3 py-2.5 rounded-lg text-base;
 }
-/* refuerzo por si algún navegador ignora color-scheme en el menú desplegable */
+/* refuerzo por si algún navegador no toma el color-scheme en el menú desplegable */
 select,
 option {
-  background-color: #212B37;
-  color: #E8EAED;
+  background-color: #FFFFFF;
+  color: #181B20;
 }
 .status-tag {
   @apply text-xs px-2.5 py-1 rounded-full font-semibold inline-block;
 }
-.status-expired { @apply bg-red/15 text-red; }
-.status-warning { @apply bg-amber/15 text-amber; }
-.status-ok { @apply bg-teal/15 text-teal; }
-.status-pending { @apply bg-dim/15 text-dim; }
+.status-expired { @apply bg-red/10 text-red; }
+.status-warning { @apply bg-amber/10 text-amber; }
+.status-ok { @apply bg-teal/10 text-teal; }
+.status-pending { @apply bg-dim/10 text-dim; }
+.status-na { @apply bg-dim/10 text-dim; }
+
+/* una vez se abre un formulario desplegable, ocultamos su botón de apertura
+   (ya quedó reemplazado por los botones "Cancelar"/"Guardar" del propio formulario) */
+details.form-details[open] > summary {
+  display: none;
+}

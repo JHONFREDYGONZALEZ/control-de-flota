@@ -1,10 +1,11 @@
 import { signUpFirstAdmin } from '../login/actions';
 import PasswordField from '@/components/PasswordField';
+import SubmitButton from '@/components/SubmitButton';
 
 export default function SignupPage({ searchParams }: { searchParams: { error?: string } }) {
   return (
     <div className="max-w-[420px] mx-auto mt-16 text-center px-4">
-      <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-amber to-red mx-auto mb-4 flex items-center justify-center font-display font-bold text-bg text-xl">
+      <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-amber to-red mx-auto mb-4 flex items-center justify-center font-display font-bold text-white text-xl">
         CF
       </div>
       <h1 className="font-display text-2xl uppercase mb-1">Control de flota</h1>
@@ -30,9 +31,7 @@ export default function SignupPage({ searchParams }: { searchParams: { error?: s
           <input type="email" name="email" required />
         </div>
         <PasswordField name="password" label="Contraseña" minLength={6} />
-        <button type="submit" className="btn btn-primary w-full">
-          Crear cuenta
-        </button>
+        <SubmitButton className="btn btn-primary w-full">Crear cuenta</SubmitButton>
       </form>
     </div>
   );

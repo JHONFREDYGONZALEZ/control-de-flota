@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { addProvider, updateProvider, removeProvider } from './actions';
+import SubmitButton from '@/components/SubmitButton';
+import CancelDetailsButton from '@/components/CancelDetailsButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,29 +36,30 @@ export default async function ProvidersPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <details>
+            <details className="form-details">
               <summary className="btn btn-sm cursor-pointer list-none">Editar</summary>
               <form action={updateProvider} className="mt-2 space-y-2 w-64">
                 <input type="hidden" name="providerId" value={p.id} />
                 <input name="name" defaultValue={p.name} required className="field" />
                 <input name="specialty" defaultValue={p.specialty || ''} placeholder="Especialidad" />
                 <input name="phone" defaultValue={p.phone || ''} placeholder="Teléfono" />
-                <button type="submit" className="btn btn-primary btn-sm w-full">
-                  Guardar
-                </button>
+                <div className="flex gap-2">
+                  <CancelDetailsButton />
+                  <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
+                </div>
               </form>
             </details>
             {isAdmin && (
               <form action={removeProvider}>
                 <input type="hidden" name="providerId" value={p.id} />
-                <button className="btn btn-sm btn-danger">Eliminar</button>
+                <SubmitButton className="btn btn-sm btn-danger">Eliminar</SubmitButton>
               </form>
             )}
           </div>
         </div>
       ))}
 
-      <details className="mt-4">
+      <details className="mt-4 form-details">
         <summary className="btn btn-primary cursor-pointer list-none">+ Agregar proveedor</summary>
         <form action={addProvider} className="card mt-2 space-y-3">
           <div className="field">
@@ -71,9 +74,10 @@ export default async function ProvidersPage() {
             <label>Teléfono (para WhatsApp)</label>
             <input name="phone" placeholder="Ej. 3214535910" />
           </div>
-          <button type="submit" className="btn btn-primary w-full">
-            Guardar
-          </button>
+          <div className="flex gap-2">
+            <CancelDetailsButton />
+            <SubmitButton className="btn btn-primary flex-1">Guardar</SubmitButton>
+          </div>
         </form>
       </details>
     </div>

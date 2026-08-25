@@ -13,7 +13,7 @@ export async function getDashboardData() {
     .from('vehicles')
     .select(
       `id, placa, marca, modelo, anio, current_km,
-       documents(id, name, has_expiry, due_date, alert_days, file_url),
+       documents(id, name, has_expiry, due_date, alert_days, file_url, not_applicable),
        maintenance_items(id, name, due_km, alert_km),
        work_orders(id, maintenance_name, notes, value, approved, invoiced, invoice_number, created_at, providers(id, name, phone))`
     )
