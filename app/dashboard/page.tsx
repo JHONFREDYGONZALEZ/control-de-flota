@@ -4,6 +4,8 @@ import { fmtKm, fmtDateTime, buildOrderWhatsappText, waLink } from '@/lib/fleet'
 import { signOut } from '../login/actions';
 import SubmitButton from '@/components/SubmitButton';
 import CancelDetailsButton from '@/components/CancelDetailsButton';
+import NotificationsToggle from '@/components/NotificationsToggle';
+import AppBadgeClear from '@/components/AppBadgeClear';
 import {
   registerKm,
   deleteObservation,
@@ -23,6 +25,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 pb-24">
+      <AppBadgeClear />
       {/* topbar */}
       <div className="flex items-center justify-between border-b border-border pb-4 mb-5 flex-wrap gap-3">
         <div className="flex items-center gap-2.5">
@@ -51,6 +54,8 @@ export default async function DashboardPage() {
           </form>
         </div>
       </div>
+
+      {profile.role === 'gerencia' && <NotificationsToggle />}
 
       {/* alertas */}
       <div className="card mb-4 !p-0 overflow-hidden">

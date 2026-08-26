@@ -1,8 +1,10 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { DOC_TEMPLATES, MAINT_TEMPLATES, kmFridayNeedsAlert, mostRecentFriday, fmtDate, toTitleCase } from '@/lib/fleet';
+import { sendPushToSubscriptions } from '@/lib/webpush';
 
 async function currentProfile() {
   const supabase = createClient();
@@ -11,6 +13,31 @@ async function currentProfile() {
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
   if (!profile) throw new Error('Perfil no encontrado');
   return { supabase, user, profile };
+}
+
+async function notifyGerenciaNewWorkOrder(companyId: string, maintenanceName: string, placa: string) {
+  if (!process.env.VAPID_PRIVATE_KEY || !process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) return;
+  const admin = createAdminClient();
+  const { data: gerentes } = await admin.from('profiles').select('id').eq('company_id', companyId).eq('role', 'gerencia');
+  if (!gerentes || gerentes.length === 0) return;
+
+  const { data: subs } = await admin
+    .from('push_subscriptions')
+    .select('id, endpoint, p256dh, auth')
+    .in('user_id', gerentes.map((g) => g.id));
+  if (!subs || subs.length === 0) return;
+
+  await sendPushToSubscriptions(
+    subs,
+    {
+      title: 'Nueva orden de trabajo por aprobar',
+      body: `${placa ? placa + ' — ' : ''}${maintenanceName}`,
+      url: '/dashboard',
+    },
+    (id) => {
+      admin.from('push_subscriptions').delete().eq('id', id);
+    }
+  );
 }
 
 export async function addVehicle(formData: FormData) {
@@ -106,6 +133,8 @@ export async function generateWorkOrder(formData: FormData) {
   const maintenanceName = rawName === '__otro__' ? String(formData.get('maintenanceOther') || '').trim() : rawName;
   if (!maintenanceName) throw new Error('Especifica el tipo de mantenimiento');
 
+  const { data: vehicle } = await supabase.from('vehicles').select('placa').eq('id', vehicleId).single();
+
   await supabase.from('work_orders').insert({
     vehicle_id: vehicleId,
     provider_id: providerId,
@@ -115,6 +144,12 @@ export async function generateWorkOrder(formData: FormData) {
   });
   revalidatePath('/dashboard');
   revalidatePath(`/vehicles/${vehicleId}`);
+
+  try {
+    await notifyGerenciaNewWorkOrder(profile.company_id, maintenanceName, vehicle?.placa || '');
+  } catch {
+    // si falla el envío de la notificación, no debe romper la creación de la orden
+  }
 }
 
 export async function updateWorkOrder(formData: FormData) {
