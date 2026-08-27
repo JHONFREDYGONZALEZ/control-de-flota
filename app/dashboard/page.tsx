@@ -6,6 +6,7 @@ import SubmitButton from '@/components/SubmitButton';
 import CancelDetailsButton from '@/components/CancelDetailsButton';
 import NotificationsToggle from '@/components/NotificationsToggle';
 import AppBadgeClear from '@/components/AppBadgeClear';
+import VehicleQuickJump from '@/components/VehicleQuickJump';
 import {
   registerKm,
   deleteObservation,
@@ -71,22 +72,16 @@ export default async function DashboardPage() {
           <div className="p-5 text-center text-dim text-sm">Todos los vehículos están al día.</div>
         ) : (
           vehiclesWithAlerts.map((v) => (
-            <Link key={v.id} href={`/vehicles/${v.id}`} className="block px-4 py-3 border-b border-border last:border-0 hover:bg-panelHover">
-              <div className="flex justify-between items-center">
-                <div>
-                  <strong className="font-mono uppercase">{v.placa}</strong>{' '}
-                  <span className="text-dim text-sm">
-                    · {v.marca} {v.modelo}
-                  </span>
-                </div>
+            <Link key={v.id} href={`/vehicles/${v.id}`} className="flex justify-between items-center px-4 py-3 border-b border-border last:border-0 hover:bg-panelHover">
+              <div>
+                <strong className="font-mono uppercase">{v.placa}</strong>{' '}
+                <span className="text-dim text-sm">
+                  · {v.marca} {v.modelo}
+                </span>
               </div>
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {v.summary.alertItems.map((ai: any, i: number) => (
-                  <span key={i} className={`status-tag status-${ai.status}`}>
-                    {ai.name} {ai.detail && <span className="opacity-80 font-normal">· {ai.detail}</span>}
-                  </span>
-                ))}
-              </div>
+              <span className={`status-tag status-${v.summary.worst}`}>
+                {v.summary.alertItems.length} alerta{v.summary.alertItems.length === 1 ? '' : 's'}
+              </span>
             </Link>
           ))
         )}
@@ -268,6 +263,8 @@ export default async function DashboardPage() {
           </div>
         ))}
       </div>
+
+      <VehicleQuickJump vehicles={vehicles.map((v) => ({ id: v.id, placa: v.placa, marca: v.marca, modelo: v.modelo, anio: v.anio }))} />
     </div>
   );
 }
