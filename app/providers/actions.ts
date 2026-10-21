@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { runOnce, check } from '@/lib/idempotent';
 
 async function currentProfile() {
   const supabase = createClient();
@@ -13,27 +14,37 @@ async function currentProfile() {
 }
 
 export async function addProvider(formData: FormData) {
-  const { supabase, profile } = await currentProfile();
-  await supabase.from('providers').insert({
-    company_id: profile.company_id,
-    name: String(formData.get('name') || '').trim(),
-    specialty: String(formData.get('specialty') || '').trim() || null,
-    phone: String(formData.get('phone') || '').trim() || null,
+  await runOnce(formData, async () => {
+    const { supabase, profile } = await currentProfile();
+    const name = String(formData.get('name') || '').trim();
+    if (!name) throw new Error('Escribe el nombre del proveedor');
+    check(
+      await supabase.from('providers').insert({
+        company_id: profile.company_id,
+        name,
+        specialty: String(formData.get('specialty') || '').trim() || null,
+        phone: String(formData.get('phone') || '').trim() || null,
+      })
+    );
+    revalidatePath('/providers');
   });
-  revalidatePath('/providers');
 }
 
 export async function updateProvider(formData: FormData) {
-  const { supabase } = await currentProfile();
-  await supabase
-    .from('providers')
-    .update({
-      name: String(formData.get('name') || '').trim(),
-      specialty: String(formData.get('specialty') || '').trim() || null,
-      phone: String(formData.get('phone') || '').trim() || null,
-    })
-    .eq('id', String(formData.get('providerId')));
-  revalidatePath('/providers');
+  await runOnce(formData, async () => {
+    const { supabase } = await currentProfile();
+    check(
+      await supabase
+        .from('providers')
+        .update({
+          name: String(formData.get('name') || '').trim(),
+          specialty: String(formData.get('specialty') || '').trim() || null,
+          phone: String(formData.get('phone') || '').trim() || null,
+        })
+        .eq('id', String(formData.get('providerId')))
+    );
+    revalidatePath('/providers');
+  });
 }
 
 export async function removeProvider(formData: FormData) {

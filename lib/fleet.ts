@@ -43,8 +43,8 @@ export function mostRecentFriday(base?: Date) {
   d.setDate(d.getDate() - diff);
   return d;
 }
-export function kmFridayNeedsAlert(lastKmLogAt: string | null) {
-  const lastFriday = mostRecentFriday();
+export function kmFridayNeedsAlert(lastKmLogAt: string | null, base?: Date) {
+  const lastFriday = mostRecentFriday(base);
   if (!lastKmLogAt) return true;
   const d = new Date(lastKmLogAt);
   d.setHours(0, 0, 0, 0);

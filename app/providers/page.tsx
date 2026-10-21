@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { addProvider, updateProvider, removeProvider } from './actions';
+import { removeProvider } from './actions';
+import OfflineForm from '@/components/OfflineForm';
+import SaveFeedback from '@/components/SaveFeedback';
 import SubmitButton from '@/components/SubmitButton';
 import CancelDetailsButton from '@/components/CancelDetailsButton';
 
@@ -38,7 +40,7 @@ export default async function ProvidersPage() {
           <div className="flex gap-2">
             <details className="form-details">
               <summary className="btn btn-sm cursor-pointer list-none">Editar</summary>
-              <form action={updateProvider} className="mt-2 space-y-2 w-64">
+              <OfflineForm action="updateProvider" label={`Proveedor ${p.name}`} className="mt-2 space-y-2 w-64">
                 <input type="hidden" name="providerId" value={p.id} />
                 <input name="name" defaultValue={p.name} required className="field" />
                 <input name="specialty" defaultValue={p.specialty || ''} placeholder="Especialidad" />
@@ -46,8 +48,9 @@ export default async function ProvidersPage() {
                 <div className="flex gap-2">
                   <CancelDetailsButton />
                   <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
+                  <SaveFeedback message="Proveedor actualizado" />
                 </div>
-              </form>
+              </OfflineForm>
             </details>
             {isAdmin && (
               <form action={removeProvider}>
@@ -61,7 +64,7 @@ export default async function ProvidersPage() {
 
       <details className="mt-4 form-details">
         <summary className="btn btn-primary cursor-pointer list-none">+ Agregar proveedor</summary>
-        <form action={addProvider} className="card mt-2 space-y-3">
+        <OfflineForm action="addProvider" label="Proveedor nuevo" className="card mt-2 space-y-3">
           <div className="field">
             <label>Nombre del proveedor</label>
             <input name="name" required autoFocus />
@@ -77,8 +80,9 @@ export default async function ProvidersPage() {
           <div className="flex gap-2">
             <CancelDetailsButton />
             <SubmitButton className="btn btn-primary flex-1">Guardar</SubmitButton>
+            <SaveFeedback message="Proveedor guardado" />
           </div>
-        </form>
+        </OfflineForm>
       </details>
     </div>
   );

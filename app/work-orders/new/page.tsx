@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { MAINT_TEMPLATES } from '@/lib/fleet';
-import { generateWorkOrderFromDashboard } from './actions';
+import OfflineForm from '@/components/OfflineForm';
+import SubmitButton from '@/components/SubmitButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +29,7 @@ export default async function NewWorkOrderPage() {
           .
         </div>
       ) : (
-        <form action={generateWorkOrderFromDashboard} className="card space-y-3">
+        <OfflineForm action="generateWorkOrderFromDashboard" label="Orden de trabajo" redirectToVehicle className="card space-y-3">
           <div className="field">
             <label>Vehículo</label>
             <select name="vehicleId" required autoFocus>
@@ -75,11 +76,9 @@ export default async function NewWorkOrderPage() {
             <Link href="/dashboard" className="btn btn-ghost flex-1 text-center">
               Cancelar
             </Link>
-            <button type="submit" className="btn btn-primary flex-1">
-              Generar orden
-            </button>
+            <SubmitButton className="btn btn-primary flex-1">Generar orden</SubmitButton>
           </div>
-        </form>
+        </OfflineForm>
       )}
     </div>
   );

@@ -2,14 +2,14 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { docStatus, maintStatus, statusLabel, fmtDate, fmtKm, fmtDateTime, kmFridayNeedsAlert, DELIVERY_PHOTO_SLOTS, buildOrderWhatsappText, waLink } from '@/lib/fleet';
-import { registerKm, generateWorkOrder, updateWorkOrder } from '@/app/actions';
 import PhotoField from '@/components/PhotoField';
 import MaintenanceTypeField from '@/components/MaintenanceTypeField';
 import MaintenanceKmFields from '@/components/MaintenanceKmFields';
 import DocumentFileField from '@/components/DocumentFileField';
 import NotApplicableDateField from '@/components/NotApplicableDateField';
 import CancelDetailsButton from '@/components/CancelDetailsButton';
-import { updateDocument, addCustomDocument, updateMaintenanceItem, addCustomMaintenanceItem, addDelivery, updateDeliveryPhotos, updateVehicleInfo, deleteVehicle } from './actions';
+import { updateVehicleInfo, deleteVehicle } from './actions';
+import OfflineForm from '@/components/OfflineForm';
 import SubmitButton from '@/components/SubmitButton';
 import SaveFeedback from '@/components/SaveFeedback';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
@@ -101,7 +101,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
           </div>
           <details className="form-details">
             <summary className="btn btn-primary btn-sm cursor-pointer list-none">Registrar kilometraje</summary>
-            <form action={registerKm} className="mt-2 space-y-2 w-56">
+            <OfflineForm action="registerKm" label={`Kilometraje ${vehicle.placa}`} className="mt-2 space-y-2 w-56">
               <input type="hidden" name="vehicleId" value={vehicle.id} />
               <input name="km" type="number" min="0" defaultValue={vehicle.current_km || ''} required />
               <div className="flex gap-2">
@@ -109,7 +109,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                 <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
                 <SaveFeedback message="Kilometraje registrado" />
               </div>
-            </form>
+            </OfflineForm>
           </details>
         </div>
         {fridayAlert && <div className="text-red text-xs mt-2">⚠ Falta registrar el kilometraje de esta semana (viernes)</div>}
@@ -176,7 +176,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                 {canEdit && (providers || []).length > 0 && (
                   <details className="form-details">
                     <summary className="btn btn-sm cursor-pointer list-none">Editar orden</summary>
-                    <form action={updateWorkOrder} className="mt-2 space-y-2 w-72">
+                    <OfflineForm action="updateWorkOrder" label={`Editar orden ${vehicle.placa}`} className="mt-2 space-y-2 w-72">
                       <input type="hidden" name="orderId" value={o.id} />
                       <input type="hidden" name="vehicleId" value={vehicle.id} />
                       <MaintenanceTypeField defaultValue={o.maintenance_name} />
@@ -200,7 +200,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                         <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar cambios</SubmitButton>
                         <SaveFeedback message="Orden actualizada" />
                       </div>
-                    </form>
+                    </OfflineForm>
                   </details>
                 )}
               </div>
@@ -218,7 +218,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
         ) : (
           <details className="form-details">
             <summary className="btn btn-primary cursor-pointer list-none">+ Generar orden de trabajo</summary>
-            <form action={generateWorkOrder} className="card mt-2 space-y-3">
+            <OfflineForm action="generateWorkOrder" label={`Orden de trabajo ${vehicle.placa}`} className="card mt-2 space-y-3">
               <input type="hidden" name="vehicleId" value={vehicle.id} />
               <MaintenanceTypeField />
               <div className="field">
@@ -242,7 +242,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                 <SubmitButton className="btn btn-primary flex-1">Generar orden</SubmitButton>
                 <SaveFeedback message="Orden generada" />
               </div>
-            </form>
+            </OfflineForm>
           </details>
         )}
       </div>
@@ -273,7 +273,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
               )}
               <details className="mt-2 form-details">
                 <summary className="btn btn-sm cursor-pointer list-none">Reemplazar fotos</summary>
-                <form action={updateDeliveryPhotos} className="mt-2 space-y-3" encType="multipart/form-data">
+                <OfflineForm action="updateDeliveryPhotos" label={`Fotos de entrega ${vehicle.placa}`} className="mt-2 space-y-3">
                   <input type="hidden" name="vehicleId" value={vehicle.id} />
                   <input type="hidden" name="deliveryId" value={d.id} />
                   <div className="grid grid-cols-2 gap-2">
@@ -294,7 +294,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                     <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar fotos reemplazadas</SubmitButton>
                     <SaveFeedback message="Fotos actualizadas" />
                   </div>
-                </form>
+                </OfflineForm>
               </details>
             </div>
           ))
@@ -324,7 +324,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
         )}
         <details className="form-details">
           <summary className="btn btn-primary cursor-pointer list-none">+ Registrar entrega</summary>
-          <form action={addDelivery} className="card mt-2 space-y-3" encType="multipart/form-data">
+          <OfflineForm action="addDelivery" label={`Entrega ${vehicle.placa}`} className="card mt-2 space-y-3">
             <input type="hidden" name="vehicleId" value={vehicle.id} />
             <div className="field">
               <label>Persona asignada</label>
@@ -348,7 +348,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
               <SubmitButton className="btn btn-primary flex-1">Guardar</SubmitButton>
               <SaveFeedback message="Entrega registrada" />
             </div>
-          </form>
+          </OfflineForm>
         </details>
       </div>
 
@@ -416,7 +416,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                 <span className={`status-tag status-${status}`}>{label}</span>
                 <details className="form-details">
                   <summary className="btn btn-sm btn-primary cursor-pointer list-none">Cargar / actualizar</summary>
-                  <form action={updateDocument} className="mt-2 space-y-2 w-64" encType="multipart/form-data">
+                  <OfflineForm action="updateDocument" label={`${doc.name} ${vehicle.placa}`} className="mt-2 space-y-2 w-64">
                     <input type="hidden" name="documentId" value={doc.id} />
                     <input type="hidden" name="vehicleId" value={vehicle.id} />
                     <input type="hidden" name="hasExpiry" value={doc.has_expiry ? '1' : '0'} />
@@ -441,7 +441,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                       <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
                       <SaveFeedback message="Documento guardado" />
                     </div>
-                  </form>
+                  </OfflineForm>
                 </details>
               </div>
             </div>
@@ -449,7 +449,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
         })}
         <details className="form-details">
           <summary className="btn cursor-pointer list-none">+ Agregar documento personalizado</summary>
-          <form action={addCustomDocument} className="card mt-2 space-y-2">
+          <OfflineForm action="addCustomDocument" label={`Documento nuevo ${vehicle.placa}`} className="card mt-2 space-y-2">
             <input type="hidden" name="vehicleId" value={vehicle.id} />
             <input name="name" placeholder="Nombre del documento" required />
             <input type="date" name="dueDate" />
@@ -458,7 +458,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
               <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
               <SaveFeedback message="Documento agregado" />
             </div>
-          </form>
+          </OfflineForm>
         </details>
       </div>
 
@@ -480,7 +480,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                 <span className={`status-tag status-${s}`}>{statusLabel(s)}</span>
                 <details className="form-details">
                   <summary className="btn btn-sm btn-primary cursor-pointer list-none">Actualizar</summary>
-                  <form action={updateMaintenanceItem} className="mt-2 space-y-2 w-72" encType="multipart/form-data">
+                  <OfflineForm action="updateMaintenanceItem" label={`${it.name} ${vehicle.placa}`} className="mt-2 space-y-2 w-72">
                     <input type="hidden" name="itemId" value={it.id} />
                     <input type="hidden" name="vehicleId" value={vehicle.id} />
                     <MaintenanceKmFields
@@ -502,7 +502,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
                       <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
                       <SaveFeedback message="Mantenimiento actualizado" />
                     </div>
-                  </form>
+                  </OfflineForm>
                 </details>
               </div>
             </div>
@@ -510,7 +510,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
         })}
         <details className="form-details">
           <summary className="btn cursor-pointer list-none">+ Agregar ítem de mantenimiento (otros)</summary>
-          <form action={addCustomMaintenanceItem} className="card mt-2 space-y-2">
+          <OfflineForm action="addCustomMaintenanceItem" label={`Ítem de mantenimiento ${vehicle.placa}`} className="card mt-2 space-y-2">
             <input type="hidden" name="vehicleId" value={vehicle.id} />
             <input name="name" placeholder="Nombre del ítem" required />
             <input name="intervalKm" type="number" placeholder="Frecuencia en km" />
@@ -520,7 +520,7 @@ export default async function VehiclePage({ params }: { params: { id: string } }
               <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
               <SaveFeedback message="Ítem agregado" />
             </div>
-          </form>
+          </OfflineForm>
         </details>
       </div>
     </div>

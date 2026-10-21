@@ -1,19 +1,16 @@
 import Link from 'next/link';
 import { getDashboardData } from '@/lib/getDashboardData';
 import { fmtKm, fmtDateTime, buildOrderWhatsappText, waLink } from '@/lib/fleet';
-import { signOut } from '../login/actions';
 import SubmitButton from '@/components/SubmitButton';
+import SaveFeedback from '@/components/SaveFeedback';
+import OfflineForm from '@/components/OfflineForm';
+import OfflineWarmup from '@/components/OfflineWarmup';
+import SignOutButton from '@/components/SignOutButton';
 import CancelDetailsButton from '@/components/CancelDetailsButton';
 import NotificationsToggle from '@/components/NotificationsToggle';
 import AppBadgeClear from '@/components/AppBadgeClear';
 import VehicleQuickJump from '@/components/VehicleQuickJump';
-import {
-  registerKm,
-  deleteObservation,
-  approveWorkOrder,
-  invoiceWorkOrder,
-  deleteWorkOrder,
-} from '../actions';
+import { deleteObservation, deleteWorkOrder } from '../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,9 +47,7 @@ export default async function DashboardPage() {
             <span>{profile.full_name}</span>
             <span className="status-tag status-pending capitalize">{profile.role}</span>
           </div>
-          <form action={signOut}>
-            <button className="btn btn-ghost btn-sm">Salir</button>
-          </form>
+          <SignOutButton />
         </div>
       </div>
 
@@ -167,10 +162,11 @@ export default async function DashboardPage() {
                     )}
                   </>
                 ) : canApprove ? (
-                  <form action={approveWorkOrder}>
+                  <OfflineForm action="approveWorkOrder" label={`Aprobar orden ${o.vehicle.placa}`}>
                     <input type="hidden" name="orderId" value={o.id} />
                     <SubmitButton className="btn btn-sm btn-primary">Aprobar</SubmitButton>
-                  </form>
+                    <SaveFeedback message="Orden aprobada" />
+                  </OfflineForm>
                 ) : (
                   <span className="status-tag status-warning">Pendiente aprobación</span>
                 )}
@@ -179,7 +175,7 @@ export default async function DashboardPage() {
                 ) : (
                   <details className="form-details">
                     <summary className="btn btn-sm cursor-pointer list-none">Facturado</summary>
-                    <form action={invoiceWorkOrder} className="mt-2 space-y-2 w-64">
+                    <OfflineForm action="invoiceWorkOrder" label={`Factura orden ${o.vehicle.placa}`} className="mt-2 space-y-2 w-64">
                       <input type="hidden" name="orderId" value={o.id} />
                       <div className="field">
                         <label>Valor del servicio</label>
@@ -192,8 +188,9 @@ export default async function DashboardPage() {
                       <div className="flex gap-2">
                         <CancelDetailsButton />
                         <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
+                        <SaveFeedback message="Factura registrada" />
                       </div>
-                    </form>
+                    </OfflineForm>
                   </details>
                 )}
                 {(!o.approved || canApprove) && (
@@ -250,20 +247,30 @@ export default async function DashboardPage() {
               </span>
               <details className="form-details">
                 <summary className="btn btn-sm cursor-pointer list-none">Registrar km</summary>
-                <form action={registerKm} className="mt-2 space-y-2">
+                <OfflineForm action="registerKm" label={`Kilometraje ${v.placa}`} className="mt-2 space-y-2">
                   <input type="hidden" name="vehicleId" value={v.id} />
                   <input name="km" type="number" min="0" required placeholder="Km actual" />
                   <div className="flex gap-2">
                     <CancelDetailsButton />
                     <SubmitButton className="btn btn-primary btn-sm flex-1">Guardar</SubmitButton>
+                    <SaveFeedback message="Kilometraje registrado" />
                   </div>
-                </form>
+                </OfflineForm>
               </details>
             </div>
           </div>
         ))}
       </div>
 
+      <OfflineWarmup
+        urls={[
+          '/dashboard',
+          '/work-orders/new',
+          '/deliveries/new',
+          ...(canApprove ? ['/providers'] : []),
+          ...vehicles.map((v) => `/vehicles/${v.id}`),
+        ]}
+      />
       <VehicleQuickJump vehicles={vehicles.map((v) => ({ id: v.id, placa: v.placa, marca: v.marca, modelo: v.modelo, anio: v.anio }))} />
     </div>
   );

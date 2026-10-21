@@ -7,14 +7,17 @@ export default function SaveFeedback({ message = 'Guardado' }: { message?: strin
   const { pending } = useFormStatus();
   const wasPending = useRef(false);
   const [visible, setVisible] = useState(false);
+  const [offline, setOffline] = useState(false);
   const anchorRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     if (wasPending.current && !pending) {
       const details = anchorRef.current?.closest('details');
       if (details) details.removeAttribute('open');
+      const isOffline = !navigator.onLine;
+      setOffline(isOffline);
       setVisible(true);
-      const t = setTimeout(() => setVisible(false), 2600);
+      const t = setTimeout(() => setVisible(false), isOffline ? 4200 : 2600);
       wasPending.current = pending;
       return () => clearTimeout(t);
     }
@@ -30,7 +33,7 @@ export default function SaveFeedback({ message = 'Guardado' }: { message?: strin
             bottom: 20,
             left: '50%',
             transform: 'translateX(-50%)',
-            background: 'var(--teal)',
+            background: offline ? '#B45309' : '#0D9488',
             color: '#fff',
             padding: '10px 18px',
             borderRadius: 999,
@@ -40,7 +43,7 @@ export default function SaveFeedback({ message = 'Guardado' }: { message?: strin
             boxShadow: '0 8px 24px rgba(0,0,0,.18)',
           }}
         >
-          ✓ {message}
+          {offline ? 'Guardado sin señal: se enviará automáticamente' : `✓ ${message}`}
         </span>
       )}
     </span>

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import OfflineSync from '@/components/OfflineSync';
 
 export const metadata: Metadata = {
   title: 'Control de flota',
@@ -35,7 +36,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body className="bg-bg text-text font-sans min-h-screen">{children}</body>
+      <body className="bg-bg text-text font-sans min-h-screen">
+        <OfflineSync />
+        {children}
+      </body>
     </html>
   );
 }

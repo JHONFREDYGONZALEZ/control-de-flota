@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { DELIVERY_PHOTO_SLOTS } from '@/lib/fleet';
-import { addDeliveryFromDashboard } from './actions';
+import OfflineForm from '@/components/OfflineForm';
+import SubmitButton from '@/components/SubmitButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +18,7 @@ export default async function NewDeliveryPage() {
         ← Volver
       </Link>
       <h2 className="font-display text-xl mb-4">Registrar entrega</h2>
-      <form action={addDeliveryFromDashboard} className="card space-y-3" encType="multipart/form-data">
+      <OfflineForm action="addDeliveryFromDashboard" label="Entrega de vehículo" redirectToVehicle className="card space-y-3">
         <div className="field">
           <label>Vehículo</label>
           <select name="vehicleId" required autoFocus>
@@ -50,10 +51,8 @@ export default async function NewDeliveryPage() {
             </div>
           ))}
         </div>
-        <button type="submit" className="btn btn-primary w-full">
-          Guardar
-        </button>
-      </form>
+        <SubmitButton className="btn btn-primary w-full">Guardar</SubmitButton>
+      </OfflineForm>
     </div>
   );
 }
