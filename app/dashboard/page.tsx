@@ -41,7 +41,7 @@ export default async function DashboardPage() {
               Usuarios
             </Link>
           )}
-          {isAdmin && (
+          {canApprove && (
             <Link href="/providers" className="btn btn-sm">
               Proveedores
             </Link>
