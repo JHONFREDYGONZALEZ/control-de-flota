@@ -8,10 +8,10 @@ export const dynamic = 'force-dynamic';
 
 export default async function NewWorkOrderPage() {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user!.id).single();
-  const { data: vehicles } = await supabase.from('vehicles').select('id, placa, marca, modelo').eq('company_id', profile!.company_id).order('placa');
-  const { data: providers } = await supabase.from('providers').select('*').eq('company_id', profile!.company_id).order('name');
+  const [{ data: vehicles }, { data: providers }] = await Promise.all([
+    supabase.from('vehicles').select('id, placa, marca, modelo').order('placa'),
+    supabase.from('providers').select('*').order('name'),
+  ]);
 
   return (
     <div className="max-w-md mx-auto px-4 py-6 pb-24">

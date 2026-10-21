@@ -11,12 +11,10 @@ export const dynamic = 'force-dynamic';
 export default async function ProvidersPage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user!.id).single();
-  const { data: providers } = await supabase
-    .from('providers')
-    .select('*')
-    .eq('company_id', profile!.company_id)
-    .order('name');
+  const [{ data: profile }, { data: providers }] = await Promise.all([
+    supabase.from('profiles').select('role').eq('id', user!.id).single(),
+    supabase.from('providers').select('*').order('name'),
+  ]);
   const isAdmin = profile!.role === 'admin';
 
   return (

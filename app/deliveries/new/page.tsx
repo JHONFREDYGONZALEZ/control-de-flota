@@ -8,9 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function NewDeliveryPage() {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user!.id).single();
-  const { data: vehicles } = await supabase.from('vehicles').select('id, placa, marca, modelo').eq('company_id', profile!.company_id).order('placa');
+  const { data: vehicles } = await supabase.from('vehicles').select('id, placa, marca, modelo').order('placa');
 
   return (
     <div className="max-w-xl mx-auto px-4 py-6 pb-24">

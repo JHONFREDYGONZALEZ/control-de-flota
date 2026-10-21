@@ -19,21 +19,19 @@ export const dynamic = 'force-dynamic';
 export default async function VehiclePage({ params }: { params: { id: string } }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const { data: profile } = await supabase.from('profiles').select('*, companies(name)').eq('id', user!.id).single();
-  const isAdmin = profile!.role === 'admin';
-  const canEditApproved = profile!.role === 'admin' || profile!.role === 'gerencia';
-
-  const { data: vehicle } = await supabase.from('vehicles').select('*').eq('id', params.id).single();
-  if (!vehicle) notFound();
-
-  const [{ data: documents }, { data: items }, { data: deliveries }, { data: workOrders }, { data: kmLogs }, { data: providers }] = await Promise.all([
+  const [{ data: profile }, { data: vehicle }, { data: documents }, { data: items }, { data: deliveries }, { data: workOrders }, { data: kmLogs }, { data: providers }] = await Promise.all([
+    supabase.from('profiles').select('*, companies(name)').eq('id', user!.id).single(),
+    supabase.from('vehicles').select('*').eq('id', params.id).maybeSingle(),
     supabase.from('documents').select('*, document_history(*)').eq('vehicle_id', params.id).order('created_at'),
     supabase.from('maintenance_items').select('*').eq('vehicle_id', params.id).order('created_at'),
     supabase.from('deliveries').select('*, delivery_photos(*)').eq('vehicle_id', params.id).order('created_at', { ascending: false }),
     supabase.from('work_orders').select('*, providers(name, phone)').eq('vehicle_id', params.id).order('created_at', { ascending: false }),
     supabase.from('km_logs').select('*').eq('vehicle_id', params.id).order('created_at', { ascending: false }).limit(20),
-    supabase.from('providers').select('*').eq('company_id', profile!.company_id).order('name'),
+    supabase.from('providers').select('*').order('name'),
   ]);
+  if (!vehicle) notFound();
+  const isAdmin = profile!.role === 'admin';
+  const canEditApproved = profile!.role === 'admin' || profile!.role === 'gerencia';
 
   const fridayAlert = kmFridayNeedsAlert(kmLogs?.[0]?.created_at || null);
 

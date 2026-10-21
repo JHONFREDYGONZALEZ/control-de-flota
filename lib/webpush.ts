@@ -20,7 +20,7 @@ function ensureConfigured() {
 export async function sendPushToSubscriptions(
   subscriptions: { endpoint: string; p256dh: string; auth: string; id: string }[],
   payload: { title: string; body: string; url?: string },
-  onInvalid?: (id: string) => void
+  onInvalid?: (id: string) => void | Promise<void>
 ) {
   ensureConfigured();
   await Promise.all(
@@ -36,7 +36,7 @@ export async function sendPushToSubscriptions(
       } catch (err: any) {
         // 404/410 = esa suscripción ya no existe (desinstaló, cambió de celular, etc.)
         if ((err?.statusCode === 404 || err?.statusCode === 410) && onInvalid) {
-          onInvalid(sub.id);
+          await onInvalid(sub.id);
         }
       }
     })

@@ -35,8 +35,8 @@ async function notifyGerenciaNewWorkOrder(companyId: string, maintenanceName: st
       body: `${placa ? placa + ' — ' : ''}${maintenanceName}`,
       url: '/dashboard',
     },
-    (id) => {
-      admin.from('push_subscriptions').delete().eq('id', id);
+    async (id) => {
+      await admin.from('push_subscriptions').delete().eq('id', id);
     }
   );
 }
