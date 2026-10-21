@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-const KEY = 'cf-warm-at';
+const KEY = 'cf-warm-v2-at';
 const EVERY_MS = 30 * 60 * 1000;
 
 /** Con buena conexión, deja guardadas en el celular las pantallas más usadas para poder abrirlas sin señal */

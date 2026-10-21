@@ -10,6 +10,7 @@ import NotApplicableDateField from '@/components/NotApplicableDateField';
 import CancelDetailsButton from '@/components/CancelDetailsButton';
 import { updateVehicleInfo, deleteVehicle } from './actions';
 import OfflineForm from '@/components/OfflineForm';
+import PendingForVehicle from '@/components/PendingForVehicle';
 import SubmitButton from '@/components/SubmitButton';
 import SaveFeedback from '@/components/SaveFeedback';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
@@ -124,6 +125,8 @@ export default async function VehiclePage({ params }: { params: { id: string } }
           </details>
         )}
       </div>
+
+      <PendingForVehicle vehicleId={vehicle.id} />
 
       {/* 1. órdenes de trabajo */}
       <div className="mt-6">

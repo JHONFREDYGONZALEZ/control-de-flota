@@ -52,12 +52,46 @@ async function handleNavigate(event) {
   return Promise.race([network.catch(() => cached), wait(SLOW_MS, cached)]);
 }
 
+// guarda también el código (js/css) que esa pantalla necesita, para que funcione sin señal aunque nunca se haya abierto
+function assetUrls(html) {
+  const marker = '/_next/static/';
+  const urls = new Set();
+  // fin de la ruta: comillas, espacio, < > o barra invertida
+  const stop = (c) => c <= 32 || c === 34 || c === 39 || c === 60 || c === 62 || c === 92;
+  let i = html.indexOf(marker);
+  while (i !== -1) {
+    let j = i;
+    while (j < html.length && !stop(html.charCodeAt(j))) j++;
+    const u = html.slice(i, j);
+    if (u.endsWith('.js') || u.endsWith('.css')) urls.add(u);
+    i = html.indexOf(marker, j);
+  }
+  return urls;
+}
+
+async function precacheAssets(html) {
+  const urls = assetUrls(html);
+  const cache = await caches.open(STATIC);
+  await Promise.all(
+    [...urls].map(async (u) => {
+      if (await cache.match(u)) return;
+      try {
+        const r = await fetch(u);
+        if (r.ok) await cache.put(u, r);
+      } catch (e) {
+        /* se reintenta en la próxima carga */
+      }
+    })
+  );
+}
+
 async function handleWarm(event) {
   const req = event.request;
   const res = await fetch(req);
   if (cacheable(res, req.url)) {
     const cache = await caches.open(PAGES);
     await cache.put(req.url, res.clone());
+    event.waitUntil(res.clone().text().then(precacheAssets).catch(() => {}));
   }
   return res;
 }
